@@ -1,0 +1,4 @@
+/target/
+# Local, ad-hoc runs and raw logs (pgbench per-transaction logs, collector CSVs)
+/results/local/
+/results/**/raw/
