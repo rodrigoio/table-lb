@@ -1,0 +1,146 @@
+# Project B: table load balancing (2 buffers + pessimistic controller,
+# switch driven by the consumer).
+#
+#   docker compose up -d                       # postgres, seed, consumer, collector
+#   docker compose run --rm producer           # ingestion load (pgbench)
+#   docker compose run --rm reader             # business reads (pgbench)
+#   docker compose down -v                     # stop and drop the database
+#
+# Every knob is an environment variable with a default (see bench/scenarios).
+name: tlb-project-b
+
+x-rust-image: &rust-image
+  image: tlb-rust:latest
+  build:
+    context: ..
+    dockerfile: common/docker/rust.Dockerfile
+
+x-pgbench-image: &pgbench-image
+  image: tlb-pgbench:latest
+  build:
+    context: ..
+    dockerfile: common/pgbench/Dockerfile
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  volumes:
+    - ./pgbench:/scripts/project:ro
+    - ../tests/pgbench:/scripts/tests:ro
+    - ${RESULTS_DIR:-../results/local/project-b}:/results
+  depends_on:
+    seed:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:18
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    environment:
+      POSTGRES_USER: tlb
+      POSTGRES_PASSWORD: tlb
+      POSTGRES_DB: tlb
+    volumes:
+      - ../common/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ../common/sql/00-instrumentation.sql:/docker-entrypoint-initdb.d/00-instrumentation.sql:ro
+      - ../common/sql/base.sql:/docker-entrypoint-initdb.d/01-base.sql:ro
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+      - pgdata:/var/lib/postgresql
+    shm_size: 256mb
+    cpus: ${PG_CPUS:-1.5}
+    mem_limit: ${PG_MEM:-1g}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U tlb -d tlb"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+
+  seed:
+    <<: *rust-image
+    entrypoint: ["/usr/local/bin/seed"]
+    environment:
+      DATABASE_URL: postgres://tlb:tlb@postgres:5432/tlb
+      SEED_ORDERS: ${SEED_ORDERS:-1000000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  consumer:
+    <<: *rust-image
+    entrypoint: ["/usr/local/bin/consumer-b"]
+    environment:
+      DATABASE_URL: postgres://tlb:tlb@postgres:5432/tlb
+      POLL_MS: ${POLL_MS:-100}
+      AUDIT: ${AUDIT:-0}
+    restart: on-failure
+    stop_grace_period: 60s
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  collector:
+    <<: *rust-image
+    entrypoint: ["/usr/local/bin/collector"]
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    environment:
+      DATABASE_URL: postgres://tlb:tlb@postgres:5432/tlb
+      INTERVAL_MS: ${COLLECTOR_INTERVAL_MS:-1000}
+      RESULTS_DIR: /results
+    volumes:
+      - ${RESULTS_DIR:-../results/local/project-b}:/results
+    stop_grace_period: 60s
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  producer:
+    <<: *pgbench-image
+    profiles: ["load"]
+    environment:
+      PGB_ROLE: producer
+      PGB_SCRIPTS: ${PRODUCER_SCRIPT:-/scripts/project/producer.sql}
+      PGB_CLIENTS: ${PRODUCER_CLIENTS:-16}
+      PGB_THREADS: ${PRODUCER_THREADS:-2}
+      PGB_DURATION: ${DURATION:-60}
+      PGB_TRANSACTIONS: ${TRANSACTIONS:-}
+      PGB_RATE: ${PRODUCER_RATE:-}
+      PGB_LOG: ${PGB_LOG:-1}
+      PGB_SAMPLING: ${SAMPLING:-0.05}
+      WINDOW: ${WINDOW:-50000}
+      BASE: ${BASE:-0}
+      LOCK_SLOTS: ${LOCK_SLOTS:-64}
+      SLOT_OFFSET: 0
+      SLEEP_MAX_MS: ${SLEEP_MAX_MS:-0}
+      PAYLOAD_SIZE: ${PAYLOAD_SIZE:-256}
+
+  burst:
+    <<: *pgbench-image
+    profiles: ["burst"]
+    environment:
+      PGB_ROLE: burst
+      PGB_SCRIPTS: /scripts/project/producer.sql
+      PGB_CLIENTS: ${BURST_CLIENTS:-8}
+      PGB_THREADS: ${PRODUCER_THREADS:-2}
+      PGB_DURATION: ${BURST_DURATION:-60}
+      PGB_RATE: ${BURST_RATE:-}
+      PGB_LOG: ${PGB_LOG:-1}
+      PGB_SAMPLING: ${SAMPLING:-0.05}
+      WINDOW: ${WINDOW:-50000}
+      BASE: ${BURST_BASE:-10000000000}
+      LOCK_SLOTS: ${LOCK_SLOTS:-64}
+      SLOT_OFFSET: 32
+      PAYLOAD_SIZE: ${PAYLOAD_SIZE:-256}
+
+  reader:
+    <<: *pgbench-image
+    profiles: ["load"]
+    environment:
+      PGB_ROLE: reader
+      PGB_SCRIPTS: /scripts/common/reader-by-id.sql@9 /scripts/common/reader-by-status.sql@1
+      PGB_CLIENTS: ${READER_CLIENTS:-4}
+      PGB_THREADS: 1
+      PGB_DURATION: ${DURATION:-60}
+      PGB_RATE: ${READER_RATE:-200}
+      PGB_LOG: ${PGB_LOG:-1}
+      PGB_SAMPLING: ${READER_SAMPLING:-1}
+      SEED_ORDERS: ${SEED_ORDERS:-1000000}
+
+volumes:
+  pgdata:

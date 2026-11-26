@@ -1,0 +1,13 @@
+[package]
+name = "consumer-b"
+description = "Project B consumer: drains the cold buffer, then switches the controller (table load balancing)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tlb-core.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+tokio-postgres.workspace = true
