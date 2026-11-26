@@ -10,5 +10,7 @@ tlb-core.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 csv.workspace = true
+hdrhistogram.workspace = true
+plotters.workspace = true
 tokio.workspace = true
 tokio-postgres.workspace = true

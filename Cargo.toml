@@ -17,6 +17,8 @@ tlb-core = { path = "common/tlb-core" }
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 csv = "1"
+hdrhistogram = { version = "7", default-features = false }
+plotters = { version = "0.3", default-features = false, features = ["svg_backend", "line_series"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "signal", "sync"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4", "with-uuid-1"] }
 uuid = "1"
