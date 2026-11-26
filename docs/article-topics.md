@@ -57,7 +57,22 @@ need to be confirmed by the benchmark campaign.
   - switch race: random sleep *between* `FOR SHARE` and `INSERT`, many switches;
   - negative control: same test **without** `FOR SHARE` must lose events;
   - A × B equivalence: identical deterministic event set → identical `orders`.
-- Results: TODO (`results/…/tests/`).
+- Results:
+  - switch race — 32 producers, 0–5 ms pause while holding `FOR SHARE`,
+    96,000 events, 73 switches: 0 missing, 0 duplicated
+    (`results/tests/switch-race/summary.txt`);
+  - negative control — same load without `FOR SHARE`: 240 of 96,000 events
+    lost in 89 switches (`results/tests/no-lock/summary.txt`). The lock is what
+    makes B correct, and the race test is able to detect a broken protocol;
+  - equivalence — 32,000 events, 9,600 orders: A and B both exact, same state
+    hash `821b8cf55f7ac935` (`results/tests/equivalence/summary.txt`).
+- Side note (tooling): without the lock, stale producers queue behind the
+  `TRUNCATE`'s lock request; pgbench prepares statements synchronously and
+  multiplexes clients per thread, so one blocked client froze the thread that
+  also held the transaction `TRUNCATE` was waiting for — a client-side deadlock
+  invisible to the server. Tests run one pgbench thread per client.
+  Real producers with independent connections/threads are not exposed to it;
+  with the lock the cold buffer has no writers at all.
 
 ## 5. Portability
 
