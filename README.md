@@ -14,6 +14,10 @@ Both apply events to the same business table (`orders`) with the same
 standard-SQL `MERGE` (forward-only order state machine
 `pending → payment_confirmed → sent → delivered`).
 
+Variants, measured facts and which technique fits which scenario:
+[`docs/comparison.md`](docs/comparison.md). Insert failures and losses (zero
+tolerance) per design: [`docs/insert-failures.md`](docs/insert-failures.md).
+
 The study goes from a 16-producer saturation test to **hundreds of thousands
 of concurrent producer connections** and millions of events per run (scenario
 C5, through a connection pooler).
@@ -203,7 +207,8 @@ project-b/    two buffers + controller: schema, pgbench producers, Rust consumer
 tests/        correctness tests (switch race, single-round-trip race, negative control, A × B equivalence)
 bench/        scenarios, one-run runner (run.sh) and the campaign matrix (campaign.sh)
 results/      campaigns (summaries versioned, raw logs not)
-docs/         article topics
+docs/         article topics; comparison.md = variants (B 1RT / 4RT …), facts and when to use each
+              insert-failures.md = every way an insert can fail or be lost, measured, per design
 ```
 
 ## Running pieces by hand

@@ -324,7 +324,8 @@ sequenceDiagram
 - Alternatives: transaction-id (snapshot) barrier, per-buffer locks with
   double-check, N buffers in a ring, native partitioning (attach/detach),
   `UNLOGGED` buffers, pgmq / external queues (Kafka, RabbitMQ).
-- When to use / when not to use: TODO after the campaign on a proper host.
+- When to use / when not to use: first answer from the dev VM in
+  [`comparison.md`](comparison.md) (c6, `results/burst60-20261127`); confirm on a proper host.
 - Open questions for the campaign: does `b-1rt` keep its C1 advantage with
   more CPU? Does the consumer keep up (lag at saturation)? What does a switch
   cost behind a pooler at 100k clients (C5)?
