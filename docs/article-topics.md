@@ -42,6 +42,9 @@ need to be confirmed by a campaign on a proper host (`./start.sh`).
   drain cold (one MERGE) → `TRUNCATE` → repeat.
   - No scheduler, no timer: cycle length adapts to load (self-clocking).
   - Batch size grows with load; latency floor = one cycle.
+  - Optional minimum cycle (`MIN_CYCLE_MS`, labels `b-30s` / `b-1rt-30s`): the
+    hot buffer stays open at least that long; a longer drain still makes the
+    next switch immediate (see §14, cycle length).
 - Once the switch commits nobody can write into the cold buffer → `TRUNCATE`
   is safe → no dead tuples, no vacuum on the buffers.
 - `TRUNCATE` kept outside the drain transaction on purpose: the design stays
@@ -292,6 +295,29 @@ sequenceDiagram
   connection longer than A's insert; controller slots must follow the number
   of server connections.
 - More moving parts: controller table, slots, consumer state machine.
+
+### Cycle length (`MIN_CYCLE_MS`)
+
+- **(smoke)** Without a minimum the consumer switches as soon as the hot buffer
+  has one row: C2 at 1,800 tx/s → 31 switches/s of ≈ 58 rows, a switch pending
+  18.7 % of the time, 26 % of producer transactions overlapping one (their
+  p99 56 vs 34 ms); per switch the controller `UPDATE` (64 rows, 5.5 KB WAL,
+  3.9 ms) and a `TRUNCATE` (6.9 ms) → ≈ 150 B of controller WAL per event,
+  enough to cancel B's WAL advantage over A at that load
+  (`results/smoke-20261127-0029`, raw `batch_log.csv` / `statements.csv`).
+- **(smoke)** C5 `b-1rt`: a switch every ≈ 330 ms while each client sends one
+  event every ≈ 2.4 s → 58 % of the single-round-trip inserts missed the hot
+  buffer and fell back to the four-statement protocol (C1: 0.13 %).
+- **(dev VM, campaign-20261126, raw data)** C1 `b`, 5 min of saturation: the
+  cycle grew on its own to 21–32 s (69k–99k rows, one `MERGE` of 23–30 s each);
+  producer throughput stayed at ≈ 3.1k tx/s (pgbench progress 2.7k–3.4k over
+  the whole run) and lag p95 reached 46–59 s. Long cycles do not change the
+  producer's routing cost; they remove the per-switch overhead.
+- Hypothesis for `b-30s` / `b-1rt-30s`: insert path as cheap as the protocol
+  allows (b-1rt ≈ A in C1), bursts absorbed by the hot buffer, switch cost
+  negligible; price: lag ≥ cycle (≈ 30–60 s), one large drain transaction per
+  cycle (row locks on `orders`, xmin horizon, WAL burst), single consumer still
+  bounded by its MERGE rate (≈ 3.3k rows/s on the dev VM).
 
 ## 15. Alternatives / when to use
 

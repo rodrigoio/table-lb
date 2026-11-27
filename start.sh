@@ -179,14 +179,16 @@ fi
 
 # ---------------------------------------------------------------- commands
 estimate_minutes() {
-  local total=0 s d runs
+  local total=0 s d runs long=0
+  # long-cycle B labels (bench/campaign.sh): b-1rt-<n>s in c1/c2/c3/c5, b-<n>s in c2/c3
+  (( ${LONG_CYCLE_MS:-30000} > 0 )) && long=1
   for s in $SCENARIOS; do
     d="$(scenario_value "$s" DURATION)"
     case "$s" in
-      c1) runs=$(( 3 * ${REPS_C1:-3} )) ;;
-      c2) runs=$(( 3 * ${REPS_C2:-3} + ${REPS_C4:-2} )) ;;
-      c3) runs=$(( 2 * ${REPS_C3:-2} )) ;;
-      c5) runs=$(( 3 * ${REPS_C5:-2} + ${REPS_C5_VARIANTS:-1} )) ;;
+      c1) runs=$(( (3 + long) * ${REPS_C1:-3} )) ;;
+      c2) runs=$(( (3 + 2 * long) * ${REPS_C2:-3} + ${REPS_C4:-2} )) ;;
+      c3) runs=$(( (2 + 2 * long) * ${REPS_C3:-2} )) ;;
+      c5) runs=$(( (3 + long) * ${REPS_C5:-2} + ${REPS_C5_VARIANTS:-1} )) ;;
       *)  runs=2 ;;
     esac
     # + ~2 min per run: fresh database, seed, drain, teardown
@@ -252,6 +254,7 @@ cmd_check() {
   echo "  campaign      results/$CAMPAIGN"
   echo "  profile       $PROFILE (PostgreSQL: cpus=$PG_CPUS mem=$PG_MEM shared_buffers=$PG_SHARED_BUFFERS effective_cache_size=$PG_EFFECTIVE_CACHE_SIZE)"
   echo "  scenarios     $SCENARIOS   (reps c1=${REPS_C1:-3} c2=${REPS_C2:-3} c4=${REPS_C4:-2} c3=${REPS_C3:-2} c5=${REPS_C5:-2}+${REPS_C5_VARIANTS:-1})"
+  echo "  long cycle    $( (( ${LONG_CYCLE_MS:-30000} > 0 )) && echo "B labels with MIN_CYCLE_MS=${LONG_CYCLE_MS:-30000} (b-$(( ${LONG_CYCLE_MS:-30000} / 1000 ))s, b-1rt-$(( ${LONG_CYCLE_MS:-30000} / 1000 ))s)" || echo "off (LONG_CYCLE_MS=0)")"
   echo "  c5            clients=$C5_CLIENTS replicas=$C5_REPLICAS pgbouncer=$(scenario_value c5 PGBOUNCER_PROCESSES)×$(scenario_value c5 PGBOUNCER_POOL_SIZE) lock_slots=$(scenario_value c5 LOCK_SLOTS)"
   echo "  calibration   C2/C3 rate = ${CALIBRATION_FRACTION} × min(A, B) pilot throughput$( [[ -n "${C2_PRODUCER_RATE:-}" ]] && echo " — fixed: C2_PRODUCER_RATE=$C2_PRODUCER_RATE")"
   echo "  estimate      campaign ≈ $(estimate_minutes) min (+ ~15 min tests, ~6 min calibration)"
@@ -287,7 +290,7 @@ write_host_info() {
     echo "compose=$(docker compose version --short 2>/dev/null)"
     echo "profile=$PROFILE"
     for v in PG_CPUS PG_MEM PG_SHARED_BUFFERS PG_EFFECTIVE_CACHE_SIZE SCENARIOS \
-             REPS_C1 REPS_C2 REPS_C3 REPS_C4 REPS_C5 REPS_C5_VARIANTS QUICK; do
+             REPS_C1 REPS_C2 REPS_C3 REPS_C4 REPS_C5 REPS_C5_VARIANTS LONG_CYCLE_MS QUICK; do
       [[ -n "${!v:-}" ]] && echo "$v=${!v}"
     done
     compgen -e | grep -E '^(PILOT|C[0-9]+)_' | sort | while read -r v; do echo "$v=${!v}"; done

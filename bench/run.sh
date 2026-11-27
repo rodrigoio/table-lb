@@ -13,6 +13,8 @@
 #
 # Scenario variables understood here (besides the compose knobs):
 #   DURATION, WARMUP, READERS, BURST, BURST_AT, DRAIN_TIMEOUT
+#   BURST_COUNT, BURST_EVERY  repeated bursts: BURST_COUNT bursts of
+#                      BURST_DURATION seconds, the i-th at BURST_AT + (i-1) × BURST_EVERY
 #   PRODUCER_REPLICAS  number of pgbench producer containers; PRODUCER_CLIENTS
 #                      (and PRODUCER_RATE) are split among them. Each replica
 #                      has its own source IP (≈60k connections each), its own
@@ -157,7 +159,21 @@ if [[ "${READERS:-0}" == "1" ]]; then
   pids+=($!)
 fi
 if [[ "${BURST:-0}" == "1" ]]; then
-  (sleep "${BURST_AT:-120}"; compose run --rm -T burst >"$raw/burst.out" 2>&1) &
+  # BURST_COUNT bursts, BURST_EVERY seconds apart (from load start), each with
+  # its own order id range; a single burst keeps the historic file names.
+  bursts="${BURST_COUNT:-1}"
+  (
+    for (( i = 1; i <= bursts; i++ )); do
+      at=$(( ${BURST_AT:-120} + (i - 1) * ${BURST_EVERY:-0} ))
+      elapsed=$(( ($(now_ms) - load_start_ms) / 1000 ))
+      (( at > elapsed )) && sleep $(( at - elapsed ))
+      role=burst
+      (( bursts > 1 )) && role="burst-$i"
+      compose run --rm -T -e PGB_ROLE="$role" \
+        -e BASE=$(( ${BURST_BASE:-100000000000000000} + (i - 1) * 10000000000000 )) \
+        burst >"$raw/$role.out" 2>&1
+    done
+  ) &
   pids+=($!)
 fi
 status=0
@@ -199,7 +215,7 @@ compose logs --no-color pgbouncer >"$raw/pgbouncer.log" 2>&1 || true
   echo "load_status=$status"
   grep -vE '^\s*(#|$)' "$scenario_file"
   # overrides and effective settings come last: the report keeps the last value
-  for var in "${overrides[@]}" CLEANUP_MODE WORKERS BATCH_SIZE LOCK_SLOTS POLL_MS PRODUCER_SCRIPT \
+  for var in "${overrides[@]}" CLEANUP_MODE WORKERS BATCH_SIZE LOCK_SLOTS POLL_MS MIN_CYCLE_MS PRODUCER_SCRIPT \
              PRODUCER_VIA PRODUCER_REPLICAS QUERY_MODE PG_CPUS PG_MEM PG_SHARED_BUFFERS \
              PG_EFFECTIVE_CACHE_SIZE PG_MAX_CONNECTIONS PGBOUNCER_PROCESSES PGBOUNCER_POOL_SIZE; do
     [[ -n "${!var:-}" ]] && echo "$var=${!var}"

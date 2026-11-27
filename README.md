@@ -85,6 +85,7 @@ Precedence: environment variables > `host.env` > defaults. The main knobs:
 | `PG_CPUS`, `PG_MEM`, `PG_SHARED_BUFFERS`, `PG_EFFECTIVE_CACHE_SIZE` | from `PROFILE` | PostgreSQL container size (identical for A and B) |
 | `SCENARIOS` | `c1 c2 c3 c5` | scenarios to run (`c2` includes C4) |
 | `REPS_C1` … `REPS_C5`, `REPS_C4`, `REPS_C5_VARIANTS` | 3 3 2 2 / 2 / 1 | repetitions |
+| `LONG_CYCLE_MS` | 30000 | minimum cycle of the long-cycle B labels (`b-30s`, `b-1rt-30s`); 0 = skip them |
 | `CALIBRATION_FRACTION` | 0.6 | C2/C3 rate = fraction × min(A, B) saturation throughput of the pilot |
 | `C2_PRODUCER_RATE`, `C3_PRODUCER_RATE`, `C3_BURST_RATE` | calibrated | fixed rates instead (the development VM used 2000 / 2000 / 4000) |
 | `C5_PRODUCER_CLIENTS` | 100000 | concurrent producer connections in C5 (one pgbench container per ≤ 50k) |
@@ -146,15 +147,19 @@ The report can be rebuilt at any time from the raw data:
 | Scenario | Load | Labels |
 |---|---|---|
 | `pilot` | 2 min saturation, used by the calibration | a, b |
-| `c1` | saturation: 16 producers without rate limit, no readers (5 min) | a, b, b-1rt |
-| `c2` | sustained rate (calibrated) + 200 reads/s (10 min) | a, a-delete, b, b-slots1 (= C4) |
-| `c3` | `c2` + a 60 s burst of 2× the rate from a second producer group (6 min) | a, b |
-| `c5` | **massive concurrency**: 100k producer connections, closed loop, through PgBouncer (10 min) | a, b, b-1rt, b-slots64 |
+| `c1` | saturation: 16 producers without rate limit, no readers (5 min) | a, b, b-1rt, b-1rt-30s |
+| `c2` | sustained rate (calibrated) + 200 reads/s (10 min) | a, a-delete, b, b-30s, b-1rt-30s, b-slots1 (= C4) |
+| `c3` | `c2` + a 60 s burst of 2× the rate from a second producer group (6 min) | a, b, b-30s, b-1rt-30s |
+| `c5` | **massive concurrency**: 100k producer connections, closed loop, through PgBouncer (10 min) | a, b, b-1rt, b-1rt-30s, b-slots64 |
+| `c6` | **periodic bursts, long run**: `c2` for 20 min + 4 bursts of 60 s every 5 min (not in the default `SCENARIOS`, run by hand; per-burst summary: `bench/burst_report.py`) | a, a-delete, b-60s, b-1rt-60s |
 
 Labels: `a-delete` = A with `CLEANUP_MODE=delete`; `b-slots1` = every producer
 locks the same controller row; `b-1rt` = B with the single-round-trip producer
 (`project-b/pgbench/producer-1rt.sql`); `b-slots64` = 64 controller rows for
-64 pooled server connections.
+64 pooled server connections; `b-30s` / `b-1rt-30s` = `b` / `b-1rt` with a
+minimum cycle of 30 s (`MIN_CYCLE_MS=30000`: the consumer keeps the hot buffer
+open for at least 30 s between switches; `LONG_CYCLE_MS` changes the value and
+the label, 0 skips these labels); `b-60s` / `b-1rt-60s` = the same with 60 s.
 
 ### C5 — hundreds of thousands of concurrent requests
 

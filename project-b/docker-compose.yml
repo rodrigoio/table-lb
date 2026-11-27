@@ -111,6 +111,7 @@ services:
     environment:
       DATABASE_URL: postgres://tlb:tlb@postgres:5432/tlb
       POLL_MS: ${POLL_MS:-100}
+      MIN_CYCLE_MS: ${MIN_CYCLE_MS:-0}
       AUDIT: ${AUDIT:-0}
     restart: on-failure
     stop_grace_period: 60s
@@ -164,7 +165,8 @@ services:
       PGB_MODE: ${QUERY_MODE:-prepared}
       PGHOST: ${PRODUCER_HOST:-postgres}
       PGPORT: ${PRODUCER_PORT:-5432}
-      PGB_SCRIPTS: /scripts/project/producer.sql
+      # same routing protocol as the main producers (e.g. producer-1rt.sql)
+      PGB_SCRIPTS: ${PRODUCER_SCRIPT:-/scripts/project/producer.sql}
       PGB_CLIENTS: ${BURST_CLIENTS:-8}
       PGB_THREADS: ${PRODUCER_THREADS:-2}
       PGB_DURATION: ${BURST_DURATION:-60}

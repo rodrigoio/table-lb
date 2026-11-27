@@ -187,6 +187,15 @@ fn read_pgbench(run: &Run, role: &str) -> Result<Option<LatencyLog>> {
 
 /// Throughput and processed transactions from the pgbench output
 /// (`<role>.out`, or the sum over `<role>-<replica>.out`).
+/// Number of pgbench console outputs (`<role>[-<i>].out`) of a role.
+fn pgbench_outputs(run: &Run, role: &str) -> usize {
+    let Ok(entries) = fs::read_dir(run.raw()) else { return 0 };
+    entries
+        .flatten()
+        .filter(|e| e.file_name().to_str().and_then(|n| strip_role(n, role)) == Some("out"))
+        .count()
+}
+
 fn pgbench_summary(run: &Run, role: &str) -> (Option<f64>, Option<f64>) {
     let mut tps: Option<f64> = None;
     let mut processed: Option<f64> = None;
@@ -331,8 +340,10 @@ fn analyze(run: &Run) -> Result<RunResult> {
     if let Some(v) = tps {
         m.insert("producer_tps", v);
     }
+    // Bursts run one after the other (BURST_COUNT > 1 → burst-<i>.out):
+    // their throughput is the mean of the bursts, not the sum.
     if let (Some(v), _) = pgbench_summary(run, "burst") {
-        m.insert("burst_tps", v);
+        m.insert("burst_tps", v / pgbench_outputs(run, "burst").max(1) as f64);
     }
     let mut producer_p99 = Vec::new();
     if let Some(log) = read_pgbench(run, "producer")? {
