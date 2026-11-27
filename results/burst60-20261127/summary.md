@@ -57,33 +57,100 @@ Top wait events (avg active sessions, repetition 1):
 - **b-1rt-60s**: LWLock:WALWrite 4.37, CPU:running 0.83, IO:WalSync 0.59, Client:ClientRead 0.20, LWLock:BufferContent 0.19
 - **b-60s**: LWLock:WALWrite 4.36, CPU:running 1.58, IO:WalSync 0.60, LWLock:BufferContent 0.23, Client:ClientRead 0.15
 
-Charts:
+Bursts (mean of the repetitions; late = slower than 2 s from the scheduled send to the commit, i.e. failed by a client with that timeout):
+
+| Metric | a | a-delete | b-1rt-60s | b-60s |
+|---|---:|---:|---:|---:|
+| Steady producer p99 before the first burst (ms) | 14.0 | 14.8 | 13.8 | 41.4 |
+| Steady producer p99 before the last burst (ms) | 776.9 | 788.5 | 21.3 | 2047.9 |
+| Burst 1: throughput (tx/s) | 3598 | 3594 | 3593 | 1432 |
+| Burst 1: p99 (ms) | 421 | 211 | 828 | 35238 |
+| Burst 1: late inserts (%) | 0.00 | 0.00 | 0.00 | 94.76 |
+| Burst 2: throughput (tx/s) | 3567 | 3533 | 3576 | 1504 |
+| Burst 2: p99 (ms) | 1965 | 1836 | 362 | 34022 |
+| Burst 2: late inserts (%) | 0.28 | 0.00 | 0.00 | 96.47 |
+| Burst 3: throughput (tx/s) | 3552 | 3606 | 3578 | 1329 |
+| Burst 3: p99 (ms) | 444 | 1223 | 243 | 36887 |
+| Burst 3: late inserts (%) | 0.00 | 0.00 | 0.00 | 94.93 |
+| Burst 4: throughput (tx/s) | 2787 | 3173 | 3592 | 1494 |
+| Burst 4: p99 (ms) | 10750 | 7214 | 491 | 34019 |
+| Burst 4: late inserts (%) | 63.20 | 48.70 | 0.00 | 95.77 |
+
+Charts (each one states under its title what it shows and what it is for):
 
 ![c6 Producer latency p99 per 5 s](charts/c6-producer-p99.svg)
 
+*Shows:* p99 latency of the base producer's inserts in 5 s windows (repetition 1), from the scheduled send time to the commit: time queued in the client is included. *Purpose:* See whether insert latency stays flat or degrades over the run, and how bursts and B's switches show up. Values above a client's timeout would be failed inserts.
+
 ![c6 Backlog (ingested − consumed)](charts/c6-backlog.svg)
+
+*Shows:* Events committed by the producers minus events applied to orders, sampled every second (repetition 1). *Purpose:* Check that the consumer keeps up: A stays near zero, B saws up and down once per cycle. A line that keeps rising means the consumer is falling behind.
 
 ![c6 End-to-end lag p95 per batch / cycle](charts/c6-lag.svg)
 
+*Shows:* p95 age of the events (commit → applied to orders) of each batch (A) or cycle (B), at the time the batch finished (repetition 1). *Purpose:* Freshness of orders over time. B's floor is one cycle; peaks in A are bursts the workers could not absorb at once.
+
 ![c6 Inbound table(s) total size](charts/c6-inbound-size.svg)
+
+*Shows:* Total size (heap + indexes + TOAST) of the inbound tables: inbox in A, buffer_0 + buffer_1 in B (repetition 1). *Purpose:* Growth and bloat on the ingestion side: A's inbox keeps growing in update mode, B returns to zero at every TRUNCATE.
 
 ![c6 Inbound table(s) dead tuples](charts/c6-inbound-dead.svg)
 
+*Shows:* Dead tuples in the inbound tables (repetition 1). *Purpose:* Vacuum debt created by A's UPDATE / DELETE cleanup; B's buffers never hold dead tuples.
+
 ![c6 orders dead tuples](charts/c6-orders-dead.svg)
+
+*Shows:* Dead tuples in the business table orders (repetition 1). *Purpose:* Vacuum debt left by the MERGE updates; fewer writes per event (B coalesces the events of an order within a cycle) leave less debt.
 
 ![c6 WAL generation rate](charts/c6-wal-rate.svg)
 
+*Shows:* WAL written per second (repetition 1). *Purpose:* Write amplification over time; peaks are checkpoints (full-page writes) and, in B, the large MERGE of each cycle.
+
 ![c6 Switch wait per cycle (project B)](charts/c6-switch-wait.svg)
+
+*Shows:* Time the consumer's switch (UPDATE of the controller rows) waited for in-flight inserts, per cycle (project B only, repetition 1). *Purpose:* Cost of the pessimistic lock: producers arriving during a switch wait about as long (risk of failed inserts with a short lock or statement timeout).
 
 ![c6 Producer throughput](charts/c6-bar-producer-tps.svg)
 
+*Shows:* Mean committed inserts per second of the base producer over the whole load. *Purpose:* Was the offered rate delivered? Below the configured rate means saturation.
+
 ![c6 Producer latency p99](charts/c6-bar-producer-p99-ms.svg)
+
+*Shows:* p99 latency of the base producer's inserts in the steady window (after warm-up), client queueing included. *Purpose:* Tail latency seen by producers: the number to compare with a client's timeout.
 
 ![c6 Reader latency p99](charts/c6-bar-reader-p99-ms.svg)
 
+*Shows:* p99 latency of the business reads on orders (by id and by status), steady window. *Purpose:* Impact of ingestion and consumption on the readers of the business table.
+
 ![c6 End-to-end lag p95](charts/c6-bar-lag-p95-ms.svg)
+
+*Shows:* p95 age of the events when applied to orders (steady window, weighted by rows). *Purpose:* Freshness: the price of B's cycle against A's continuous workers.
 
 ![c6 WAL per event](charts/c6-bar-wal-bytes-per-event.svg)
 
+*Shows:* WAL bytes per ingested event, from the load start to the end of the drain. *Purpose:* Write amplification: I/O, replication and archiving cost of each design.
+
 ![c6 CPU postgres](charts/c6-bar-cpu-postgres-pct.svg)
+
+*Shows:* Mean CPU of the PostgreSQL container in the steady window (100 = one core). *Purpose:* Database cost of the same work; lower means more headroom for peaks.
+
+![c6 WAL per event by statement](charts/c6-wal-steps.svg)
+
+*Shows:* WAL bytes per event split by statement (pg_stat_statements, mean of the repetitions): inbound INSERT, routing / switch (B), claim (A), MERGE into orders, cleanup (UPDATE / DELETE / TRUNCATE) and other = total WAL − those statements (vacuum, checkpoints, bookkeeping). *Purpose:* Where each design's write amplification comes from (docs/comparison.md).
+
+![c6 Burst throughput, short vs long term](charts/c6-bursts-tps.svg)
+
+*Shows:* Throughput of the burst producer group in each burst (mean of the repetitions); the line is the configured burst rate. *Purpose:* Short term (first burst) versus long term (last burst): does the design keep absorbing peaks? Below the line, inserts queue in the client.
+
+![c6 Burst insert latency p99, short vs long term](charts/c6-bursts-p99.svg)
+
+*Shows:* p99 latency of the burst inserts in each burst, from the scheduled send time to the commit (mean of the repetitions, logarithmic axis). *Purpose:* Tail latency at the peaks, short term versus long term.
+
+![c6 Late burst inserts (client-timeout risk)](charts/c6-bursts-late.svg)
+
+*Shows:* Share of the burst inserts slower than 2 s in each burst, from the scheduled send time to the commit (mean of the repetitions). *Purpose:* Inserts that a client with a 2 s timeout would have failed: the zero-failure requirement (docs/insert-failures.md), short term versus long term.
+
+![c6 Steady insert latency p99, start vs end](charts/c6-steady-p99.svg)
+
+*Shows:* p99 latency of the base producer in the quiet period before the first burst and in the quiet period before the last burst (mean of the repetitions, logarithmic axis). *Purpose:* Degradation over time, outside the bursts: equal bars mean the design does not wear out during the run.
 

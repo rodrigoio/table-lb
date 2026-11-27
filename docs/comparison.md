@@ -107,6 +107,23 @@ Other measured facts:
 - **C1 `b`, 5 min of saturation:** cycles grew on their own to 21–32 s.
   Throughput stayed at ≈ 3.1k tx/s, limited by routing.
 
+### 2.4 Charts (c6)
+
+Every chart prints under its title what it shows and what it is for. All
+c6 charts, with their captions, are in `results/burst60-20261127/summary.md`.
+
+![c6 burst throughput](../results/burst60-20261127/charts/c6-bursts-tps.svg)
+
+![c6 burst insert latency p99](../results/burst60-20261127/charts/c6-bursts-p99.svg)
+
+![c6 steady insert latency p99, start vs end](../results/burst60-20261127/charts/c6-steady-p99.svg)
+
+![c6 WAL per event by statement](../results/burst60-20261127/charts/c6-wal-steps.svg)
+
+![c6 CPU postgres](../results/burst60-20261127/charts/c6-bar-cpu-postgres-pct.svg)
+
+![c6 end-to-end lag](../results/burst60-20261127/charts/c6-lag.svg)
+
 ## 3. Strengths and weaknesses
 
 | Variant | Better at | Worse at |

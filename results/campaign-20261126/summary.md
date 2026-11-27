@@ -51,33 +51,63 @@ Top wait events (avg active sessions, repetition 1):
 - **a**: LWLock:WALWrite 11.24, CPU:running 3.82, IO:WalSync 0.75, LWLock:WALInsert 0.58, LWLock:BufferContent 0.56
 - **b**: LWLock:WALWrite 5.04, CPU:running 2.24, IO:WalSync 0.68, LWLock:BufferContent 0.26, LWLock:WALInsert 0.14
 
-Charts:
+Charts (each one states under its title what it shows and what it is for):
 
 ![c1 Producer latency p99 per 5 s](charts/c1-producer-p99.svg)
 
+*Shows:* p99 latency of the base producer's inserts in 5 s windows (repetition 1), from the scheduled send time to the commit: time queued in the client is included. *Purpose:* See whether insert latency stays flat or degrades over the run, and how bursts and B's switches show up. Values above a client's timeout would be failed inserts.
+
 ![c1 Backlog (ingested − consumed)](charts/c1-backlog.svg)
+
+*Shows:* Events committed by the producers minus events applied to orders, sampled every second (repetition 1). *Purpose:* Check that the consumer keeps up: A stays near zero, B saws up and down once per cycle. A line that keeps rising means the consumer is falling behind.
 
 ![c1 End-to-end lag p95 per batch / cycle](charts/c1-lag.svg)
 
+*Shows:* p95 age of the events (commit → applied to orders) of each batch (A) or cycle (B), at the time the batch finished (repetition 1). *Purpose:* Freshness of orders over time. B's floor is one cycle; peaks in A are bursts the workers could not absorb at once.
+
 ![c1 Inbound table(s) total size](charts/c1-inbound-size.svg)
+
+*Shows:* Total size (heap + indexes + TOAST) of the inbound tables: inbox in A, buffer_0 + buffer_1 in B (repetition 1). *Purpose:* Growth and bloat on the ingestion side: A's inbox keeps growing in update mode, B returns to zero at every TRUNCATE.
 
 ![c1 Inbound table(s) dead tuples](charts/c1-inbound-dead.svg)
 
+*Shows:* Dead tuples in the inbound tables (repetition 1). *Purpose:* Vacuum debt created by A's UPDATE / DELETE cleanup; B's buffers never hold dead tuples.
+
 ![c1 orders dead tuples](charts/c1-orders-dead.svg)
+
+*Shows:* Dead tuples in the business table orders (repetition 1). *Purpose:* Vacuum debt left by the MERGE updates; fewer writes per event (B coalesces the events of an order within a cycle) leave less debt.
 
 ![c1 WAL generation rate](charts/c1-wal-rate.svg)
 
+*Shows:* WAL written per second (repetition 1). *Purpose:* Write amplification over time; peaks are checkpoints (full-page writes) and, in B, the large MERGE of each cycle.
+
 ![c1 Switch wait per cycle (project B)](charts/c1-switch-wait.svg)
+
+*Shows:* Time the consumer's switch (UPDATE of the controller rows) waited for in-flight inserts, per cycle (project B only, repetition 1). *Purpose:* Cost of the pessimistic lock: producers arriving during a switch wait about as long (risk of failed inserts with a short lock or statement timeout).
 
 ![c1 Producer throughput](charts/c1-bar-producer-tps.svg)
 
+*Shows:* Mean committed inserts per second of the base producer over the whole load. *Purpose:* Was the offered rate delivered? Below the configured rate means saturation.
+
 ![c1 Producer latency p99](charts/c1-bar-producer-p99-ms.svg)
+
+*Shows:* p99 latency of the base producer's inserts in the steady window (after warm-up), client queueing included. *Purpose:* Tail latency seen by producers: the number to compare with a client's timeout.
 
 ![c1 End-to-end lag p95](charts/c1-bar-lag-p95-ms.svg)
 
+*Shows:* p95 age of the events when applied to orders (steady window, weighted by rows). *Purpose:* Freshness: the price of B's cycle against A's continuous workers.
+
 ![c1 WAL per event](charts/c1-bar-wal-bytes-per-event.svg)
 
+*Shows:* WAL bytes per ingested event, from the load start to the end of the drain. *Purpose:* Write amplification: I/O, replication and archiving cost of each design.
+
 ![c1 CPU postgres](charts/c1-bar-cpu-postgres-pct.svg)
+
+*Shows:* Mean CPU of the PostgreSQL container in the steady window (100 = one core). *Purpose:* Database cost of the same work; lower means more headroom for peaks.
+
+![c1 WAL per event by statement](charts/c1-wal-steps.svg)
+
+*Shows:* WAL bytes per event split by statement (pg_stat_statements, mean of the repetitions): inbound INSERT, routing / switch (B), claim (A), MERGE into orders, cleanup (UPDATE / DELETE / TRUNCATE) and other = total WAL − those statements (vacuum, checkpoints, bookkeeping). *Purpose:* Where each design's write amplification comes from (docs/comparison.md).
 
 ## c2
 
@@ -130,33 +160,65 @@ Top wait events (avg active sessions, repetition 1):
 - **a-delete**: LWLock:WALWrite 1.99, CPU:running 1.25, IO:WalSync 0.58, Client:ClientRead 0.23, LWLock:BufferContent 0.05
 - **b**: LWLock:WALWrite 2.76, CPU:running 1.37, IO:WalSync 0.58, Lock:transactionid 0.43, Client:ClientRead 0.17
 
-Charts:
+Charts (each one states under its title what it shows and what it is for):
 
 ![c2 Producer latency p99 per 5 s](charts/c2-producer-p99.svg)
 
+*Shows:* p99 latency of the base producer's inserts in 5 s windows (repetition 1), from the scheduled send time to the commit: time queued in the client is included. *Purpose:* See whether insert latency stays flat or degrades over the run, and how bursts and B's switches show up. Values above a client's timeout would be failed inserts.
+
 ![c2 Backlog (ingested − consumed)](charts/c2-backlog.svg)
+
+*Shows:* Events committed by the producers minus events applied to orders, sampled every second (repetition 1). *Purpose:* Check that the consumer keeps up: A stays near zero, B saws up and down once per cycle. A line that keeps rising means the consumer is falling behind.
 
 ![c2 End-to-end lag p95 per batch / cycle](charts/c2-lag.svg)
 
+*Shows:* p95 age of the events (commit → applied to orders) of each batch (A) or cycle (B), at the time the batch finished (repetition 1). *Purpose:* Freshness of orders over time. B's floor is one cycle; peaks in A are bursts the workers could not absorb at once.
+
 ![c2 Inbound table(s) total size](charts/c2-inbound-size.svg)
+
+*Shows:* Total size (heap + indexes + TOAST) of the inbound tables: inbox in A, buffer_0 + buffer_1 in B (repetition 1). *Purpose:* Growth and bloat on the ingestion side: A's inbox keeps growing in update mode, B returns to zero at every TRUNCATE.
 
 ![c2 Inbound table(s) dead tuples](charts/c2-inbound-dead.svg)
 
+*Shows:* Dead tuples in the inbound tables (repetition 1). *Purpose:* Vacuum debt created by A's UPDATE / DELETE cleanup; B's buffers never hold dead tuples.
+
 ![c2 orders dead tuples](charts/c2-orders-dead.svg)
+
+*Shows:* Dead tuples in the business table orders (repetition 1). *Purpose:* Vacuum debt left by the MERGE updates; fewer writes per event (B coalesces the events of an order within a cycle) leave less debt.
 
 ![c2 WAL generation rate](charts/c2-wal-rate.svg)
 
+*Shows:* WAL written per second (repetition 1). *Purpose:* Write amplification over time; peaks are checkpoints (full-page writes) and, in B, the large MERGE of each cycle.
+
 ![c2 Switch wait per cycle (project B)](charts/c2-switch-wait.svg)
+
+*Shows:* Time the consumer's switch (UPDATE of the controller rows) waited for in-flight inserts, per cycle (project B only, repetition 1). *Purpose:* Cost of the pessimistic lock: producers arriving during a switch wait about as long (risk of failed inserts with a short lock or statement timeout).
 
 ![c2 Producer throughput](charts/c2-bar-producer-tps.svg)
 
+*Shows:* Mean committed inserts per second of the base producer over the whole load. *Purpose:* Was the offered rate delivered? Below the configured rate means saturation.
+
 ![c2 Producer latency p99](charts/c2-bar-producer-p99-ms.svg)
+
+*Shows:* p99 latency of the base producer's inserts in the steady window (after warm-up), client queueing included. *Purpose:* Tail latency seen by producers: the number to compare with a client's timeout.
 
 ![c2 Reader latency p99](charts/c2-bar-reader-p99-ms.svg)
 
+*Shows:* p99 latency of the business reads on orders (by id and by status), steady window. *Purpose:* Impact of ingestion and consumption on the readers of the business table.
+
 ![c2 End-to-end lag p95](charts/c2-bar-lag-p95-ms.svg)
+
+*Shows:* p95 age of the events when applied to orders (steady window, weighted by rows). *Purpose:* Freshness: the price of B's cycle against A's continuous workers.
 
 ![c2 WAL per event](charts/c2-bar-wal-bytes-per-event.svg)
 
+*Shows:* WAL bytes per ingested event, from the load start to the end of the drain. *Purpose:* Write amplification: I/O, replication and archiving cost of each design.
+
 ![c2 CPU postgres](charts/c2-bar-cpu-postgres-pct.svg)
+
+*Shows:* Mean CPU of the PostgreSQL container in the steady window (100 = one core). *Purpose:* Database cost of the same work; lower means more headroom for peaks.
+
+![c2 WAL per event by statement](charts/c2-wal-steps.svg)
+
+*Shows:* WAL bytes per event split by statement (pg_stat_statements, mean of the repetitions): inbound INSERT, routing / switch (B), claim (A), MERGE into orders, cleanup (UPDATE / DELETE / TRUNCATE) and other = total WAL − those statements (vacuum, checkpoints, bookkeeping). *Purpose:* Where each design's write amplification comes from (docs/comparison.md).
 

@@ -72,6 +72,10 @@ Reading:
 - **B 4RT** saturates on routing. Almost every burst insert would have timed
   out, and 17 % of the events were never sent.
 
+![c6 late burst inserts](../results/burst60-20261127/charts/c6-bursts-late.svg)
+
+![c6 producer latency p99 per 5 s](../results/burst60-20261127/charts/c6-producer-p99.svg)
+
 ## 3. Causes common to A and B
 
 | Cause | Mechanism | Class | Mitigation |
