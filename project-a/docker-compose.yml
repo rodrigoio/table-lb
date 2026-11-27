@@ -24,14 +24,32 @@ x-pgbench-image: &pgbench-image
     - ./pgbench:/scripts/project:ro
     - ../tests/pgbench:/scripts/tests:ro
     - ${RESULTS_DIR:-../results/local/project-a}:/results
+  # Up to ~60k client connections per container (ephemeral ports of one
+  # source IP towards one server port); more clients → more replicas.
+  ulimits:
+    nofile: { soft: 1048576, hard: 1048576 }
+  sysctls:
+    net.ipv4.ip_local_port_range: "1024 65535"
   depends_on:
     seed:
       condition: service_completed_successfully
+    pgbouncer:
+      condition: service_healthy
 
 services:
   postgres:
     image: postgres:18
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    # Sizing knobs for bigger hosts; defaults equal common/postgres/postgresql.conf.
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-100}
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-256MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-768MB}
     environment:
       POSTGRES_USER: tlb
       POSTGRES_PASSWORD: tlb
@@ -50,6 +68,30 @@ services:
       interval: 2s
       timeout: 3s
       retries: 60
+
+  # Connection pooler (transaction pooling) for the massive-concurrency
+  # scenario: producers connect here when PRODUCER_HOST=pgbouncer.
+  pgbouncer:
+    image: tlb-pgbouncer:latest
+    build:
+      context: ..
+      dockerfile: common/pgbouncer/Dockerfile
+    environment:
+      PGBOUNCER_PROCESSES: ${PGBOUNCER_PROCESSES:-4}
+      PGBOUNCER_POOL_SIZE: ${PGBOUNCER_POOL_SIZE:-16}
+      PGBOUNCER_MAX_CLIENTS: ${PGBOUNCER_MAX_CLIENTS:-200000}
+    ulimits:
+      nofile: { soft: 1048576, hard: 1048576 }
+    sysctls:
+      net.core.somaxconn: 65535
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U tlb -d tlb"]
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   seed:
     <<: *rust-image
@@ -97,6 +139,9 @@ services:
     profiles: ["load"]
     environment:
       PGB_ROLE: producer
+      PGB_MODE: ${QUERY_MODE:-prepared}
+      PGHOST: ${PRODUCER_HOST:-postgres}
+      PGPORT: ${PRODUCER_PORT:-5432}
       PGB_SCRIPTS: ${PRODUCER_SCRIPT:-/scripts/project/producer.sql}
       PGB_CLIENTS: ${PRODUCER_CLIENTS:-16}
       PGB_THREADS: ${PRODUCER_THREADS:-2}
@@ -114,6 +159,9 @@ services:
     profiles: ["burst"]
     environment:
       PGB_ROLE: burst
+      PGB_MODE: ${QUERY_MODE:-prepared}
+      PGHOST: ${PRODUCER_HOST:-postgres}
+      PGPORT: ${PRODUCER_PORT:-5432}
       PGB_SCRIPTS: /scripts/project/producer.sql
       PGB_CLIENTS: ${BURST_CLIENTS:-8}
       PGB_THREADS: ${PRODUCER_THREADS:-2}
@@ -122,7 +170,7 @@ services:
       PGB_LOG: ${PGB_LOG:-1}
       PGB_SAMPLING: ${SAMPLING:-0.05}
       WINDOW: ${WINDOW:-50000}
-      BASE: ${BURST_BASE:-10000000000}
+      BASE: ${BURST_BASE:-100000000000000000}
       PAYLOAD_SIZE: ${PAYLOAD_SIZE:-256}
 
   reader:

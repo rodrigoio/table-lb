@@ -1,0 +1,93 @@
+[00:29:15] a/pilot/a/rep-1: preparing (fresh database)
+[00:29:32] a/pilot/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:30:34] a/pilot/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:30:38] a/pilot/a/rep-1: backlog left: 0 (drain took 3s)
+[00:30:42] a/pilot/a/rep-1: done → results/smoke-20261127-0029/pilot/a/rep-1
+[00:30:44] b/pilot/b/rep-1: preparing (fresh database)
+[00:31:02] b/pilot/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:32:04] b/pilot/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:32:04] b/pilot/b/rep-1: backlog left: 0 (drain took 0s)
+[00:32:09] b/pilot/b/rep-1: done → results/smoke-20261127-0029/pilot/b/rep-1
+campaign smoke-20261127-0029 started 2026-11-27T00:32:10Z at d24d03e: c1 c2 c3 c5
+[00:32:10] a/c1/a/rep-1: preparing (fresh database)
+[00:32:27] a/c1/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:33:30] a/c1/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:33:34] a/c1/a/rep-1: backlog left: 0 (drain took 3s)
+[00:33:38] a/c1/a/rep-1: done → results/smoke-20261127-0029/c1/a/rep-1
+[00:33:40] b/c1/b/rep-1: preparing (fresh database)
+[00:33:58] b/c1/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:35:00] b/c1/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:35:00] b/c1/b/rep-1: backlog left: 0 (drain took 0s)
+[00:35:05] b/c1/b/rep-1: done → results/smoke-20261127-0029/c1/b/rep-1
+[00:35:06] b/c1/b-1rt/rep-1: preparing (fresh database)
+[00:35:21] b/c1/b-1rt/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:36:23] b/c1/b-1rt/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:36:25] b/c1/b-1rt/rep-1: backlog left: 0 (drain took 1s)
+[00:36:29] b/c1/b-1rt/rep-1: done → results/smoke-20261127-0029/c1/b-1rt/rep-1
+[00:36:30] a/c2/a/rep-1: preparing (fresh database)
+[00:36:46] a/c2/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:37:49] a/c2/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:37:49] a/c2/a/rep-1: backlog left: 0 (drain took 0s)
+[00:37:53] a/c2/a/rep-1: done → results/smoke-20261127-0029/c2/a/rep-1
+[00:37:54] b/c2/b/rep-1: preparing (fresh database)
+[00:38:10] b/c2/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:39:13] b/c2/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:39:13] b/c2/b/rep-1: backlog left: 0 (drain took 0s)
+[00:39:17] b/c2/b/rep-1: done → results/smoke-20261127-0029/c2/b/rep-1
+[00:39:19] a/c2/a-delete/rep-1: preparing (fresh database)
+[00:39:34] a/c2/a-delete/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:40:37] a/c2/a-delete/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:40:37] a/c2/a-delete/rep-1: backlog left: 0 (drain took 0s)
+[00:40:42] a/c2/a-delete/rep-1: done → results/smoke-20261127-0029/c2/a-delete/rep-1
+[00:40:43] b/c2/b-slots1/rep-1: preparing (fresh database)
+[00:40:58] b/c2/b-slots1/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:42:01] b/c2/b-slots1/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:42:01] b/c2/b-slots1/rep-1: backlog left: 0 (drain took 0s)
+[00:42:06] b/c2/b-slots1/rep-1: done → results/smoke-20261127-0029/c2/b-slots1/rep-1
+[00:42:07] a/c3/a/rep-1: preparing (fresh database)
+[00:42:22] a/c3/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[00:43:25] a/c3/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:43:26] a/c3/a/rep-1: backlog left: 0 (drain took 0s)
+[00:43:30] a/c3/a/rep-1: done → results/smoke-20261127-0029/c3/a/rep-1
+[00:43:31] b/c3/b/rep-1: preparing (fresh database)
+[00:43:49] b/c3/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[00:44:52] b/c3/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:44:53] b/c3/b/rep-1: backlog left: 0 (drain took 0s)
+[00:44:57] b/c3/b/rep-1: done → results/smoke-20261127-0029/c3/b/rep-1
+[00:44:58] a/c5/a/rep-1: preparing (fresh database)
+[00:45:14] a/c5/a/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:46:18] a/c5/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:46:19] a/c5/a/rep-1: backlog left: 0 (drain took 0s)
+[00:46:23] a/c5/a/rep-1: done → results/smoke-20261127-0029/c5/a/rep-1
+[00:46:24] b/c5/b/rep-1: preparing (fresh database)
+[00:46:41] b/c5/b/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:47:46] b/c5/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:47:47] b/c5/b/rep-1: backlog left: 0 (drain took 0s)
+[00:47:51] b/c5/b/rep-1: done → results/smoke-20261127-0029/c5/b/rep-1
+[00:47:52] b/c5/b-1rt/rep-1: preparing (fresh database)
+[00:48:08] b/c5/b-1rt/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:49:13] b/c5/b-1rt/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:49:13] b/c5/b-1rt/rep-1: backlog left: 0 (drain took 0s)
+[00:49:17] b/c5/b-1rt/rep-1: done → results/smoke-20261127-0029/c5/b-1rt/rep-1
+[00:49:19] b/c5/b-slots64/rep-1: preparing (fresh database)
+[00:49:34] b/c5/b-slots64/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:50:39] b/c5/b-slots64/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:50:39] b/c5/b-slots64/rep-1: backlog left: 0 (drain took 0s)
+[00:50:43] b/c5/b-slots64/rep-1: done → results/smoke-20261127-0029/c5/b-slots64/rep-1
+campaign finished 2026-11-27T00:50:44Z, building the report
+analyzed c1/a/rep-1
+analyzed c1/b/rep-1
+analyzed c1/b-1rt/rep-1
+analyzed c2/a/rep-1
+analyzed c2/a-delete/rep-1
+analyzed c2/b/rep-1
+analyzed c2/b-slots1/rep-1
+analyzed c3/a/rep-1
+analyzed c3/b/rep-1
+analyzed c5/a/rep-1
+analyzed c5/b/rep-1
+analyzed c5/b-1rt/rep-1
+analyzed c5/b-slots64/rep-1
+analyzed pilot/a/rep-1
+analyzed pilot/b/rep-1
+wrote /results/smoke-20261127-0029/summary.md, runs.csv and charts/

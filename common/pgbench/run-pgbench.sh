@@ -10,6 +10,12 @@
 #   PGB_RATE          target total rate in tps (empty = as fast as possible)
 #   PGB_LOG           1 = write per-transaction logs (sampled)
 #   PGB_SAMPLING      sampling rate for per-transaction logs
+#   PGB_MODE          query protocol: prepared (default) | extended | simple.
+#                     Behind a transaction pooler use extended: pgbench
+#                     prepares statements synchronously, blocking every client
+#                     of the thread while the pooler waits for a free server
+#                     connection, and those connections are held by clients of
+#                     the same blocked thread in the middle of a transaction.
 #   WINDOW, BASE, LOCK_SLOTS, SLOT_OFFSET, SEED_ORDERS, SLEEP_MAX_MS,
 #   PAYLOAD_SIZE      variables passed to the scripts with -D
 set -euo pipefail
@@ -22,7 +28,7 @@ PAYLOAD_SIZE="${PAYLOAD_SIZE:-256}"
 PAYLOAD="$(head -c "$PAYLOAD_SIZE" /dev/zero | tr '\0' 'x')"
 
 args=(
-  -h "${PGHOST:-postgres}" -U "${PGUSER:-tlb}" -n -M prepared
+  -h "${PGHOST:-postgres}" -U "${PGUSER:-tlb}" -n -M "${PGB_MODE:-prepared}"
   -c "${PGB_CLIENTS:-8}" -j "${PGB_THREADS:-2}" -P "${PGB_PROGRESS:-5}"
   -D k=0
   -D window="${WINDOW:-50000}"
@@ -31,6 +37,7 @@ args=(
   -D slot_offset="${SLOT_OFFSET:-0}"
   -D seed_orders="${SEED_ORDERS:-1000000}"
   -D sleep_max_ms="${SLEEP_MAX_MS:-0}"
+  -D hot=0
   -D payload="$PAYLOAD"
 )
 

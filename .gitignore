@@ -2,3 +2,7 @@
 # Local, ad-hoc runs and raw logs (pgbench per-transaction logs, collector CSVs)
 /results/local/
 /results/**/raw/
+# Machine-specific configuration of start.sh, campaign pointer and archives
+/host.env
+/results/latest
+/results/*.tar.gz

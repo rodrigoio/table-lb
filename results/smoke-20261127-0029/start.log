@@ -1,0 +1,595 @@
+[1;34m==>[0m table-lb: 'smoke' → results/smoke-20261127-0029/ (started 2026-11-27T00:29:07Z)
+[1;34m==>[0m host
+  [32mok[0m    2 CPUs, 1 GB RAM, x86_64, kernel 6.1.0-56-amd64
+  [33mwarn[0m  fewer than 8 CPUs: load generators and PostgreSQL will compete for CPU
+  [33mwarn[0m  less than 16 GB RAM
+[1;34m==>[0m docker
+  [32mok[0m    docker 29.9.2
+  [32mok[0m    Docker Compose version v5.6.1
+  [32mok[0m    83 GB free under /var/lib/docker
+  [32mok[0m    containers accept nofile=1048576 and ip_local_port_range
+  [32mok[0m    git 2.39.5
+  [33mwarn[0m  working tree has local changes: runs record the HEAD revision only
+[1;34m==>[0m C5 — 2000 concurrent producer connections over 2 pgbench containers
+  [32mok[0m    1000 connections per container
+  [33mwarn[0m  RAM: ~3165 MB needed, 1967 MB available: lower C5_PRODUCER_CLIENTS (FORCE=1)
+  [32mok[0m    nf_conntrack_max 65536
+  [32mok[0m    fs.file-max 9223372036854775807
+[1;34m==>[0m configuration
+  campaign      results/smoke-20261127-0029
+  profile       reference (PostgreSQL: cpus=1.5 mem=1g shared_buffers=256MB effective_cache_size=768MB)
+  scenarios     c1 c2 c3 c5   (reps c1=1 c2=1 c4=1 c3=1 c5=1+1)
+  c5            clients=2000 replicas=2 pgbouncer=2×8 lock_slots=256
+  calibration   C2/C3 rate = 0.6 × min(A, B) pilot throughput
+  estimate      campaign ≈ 39 min (+ ~15 min tests, ~6 min calibration)
+  overrides     C1_DURATION=60 C1_SEED_ORDERS=100000 C1_WARMUP=15 C2_DURATION=60 C2_SEED_ORDERS=100000 C2_WARMUP=15 C3_BURST_AT=20 C3_BURST_DURATION=20 C3_DURATION=60 C3_SEED_ORDERS=100000 C3_WARMUP=15 C5_DRAIN_TIMEOUT=600 C5_DURATION=60 C5_LOCK_SLOTS=256 C5_PGBOUNCER_POOL_SIZE=8 C5_PGBOUNCER_PROCESSES=2 C5_PRODUCER_CLIENTS=2000 C5_PRODUCER_REPLICAS=2 C5_PRODUCER_THREADS=2 C5_SEED_ORDERS=100000 C5_WARMUP=15 PILOT_DURATION=60 PILOT_SEED_ORDERS=100000 PILOT_WARMUP=15 
+  (4 warning(s): results remain valid for A × B comparison, absolute numbers depend on the host)
+[1;34m==>[0m building images (first build compiles the Rust workspace: a few minutes)
+ Image tlb-rust:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-pgbouncer:latest Building 
+ Image tlb-rust:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-rust:latest Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.53kB done
+#1 DONE 0.0s
+
+#2 [reader internal] load build definition from Dockerfile
+#2 transferring dockerfile: 419B done
+#2 DONE 0.0s
+
+#3 [seed internal] load build definition from rust.Dockerfile
+#3 transferring dockerfile: 828B done
+#3 DONE 0.0s
+
+#4 [pgbouncer internal] load build definition from Dockerfile
+#4 transferring dockerfile: 692B done
+#4 DONE 0.0s
+
+#5 [reader internal] load metadata for docker.io/library/postgres:18
+#5 DONE 0.0s
+
+#6 [producer internal] load .dockerignore
+#6 transferring context: 73B done
+#6 DONE 0.0s
+
+#7 [reader internal] load build context
+#7 DONE 0.0s
+
+#8 [pgbouncer internal] load build context
+#8 DONE 0.0s
+
+#9 [reader 1/4] FROM docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328
+#9 resolve docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328 0.0s done
+#9 resolve docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328 0.0s done
+#9 DONE 0.0s
+
+#7 [reader internal] load build context
+#7 transferring context: 217B done
+#7 DONE 0.0s
+
+#8 [pgbouncer internal] load build context
+#8 transferring context: 2.15kB done
+#8 DONE 0.0s
+
+#10 [producer 3/4] COPY common/pgbench/run-pgbench.sh /usr/local/bin/run-pgbench
+#10 CACHED
+
+#11 [producer 2/4] COPY common/pgbench/*.sql /scripts/common/
+#11 CACHED
+
+#12 [reader 4/4] RUN chmod 0755 /usr/local/bin/run-pgbench
+#12 CACHED
+
+#13 [pgbouncer 2/4] RUN apt-get update  && apt-get install -y --no-install-recommends pgbouncer  && rm -rf /var/lib/apt/lists/*
+#13 CACHED
+
+#14 [pgbouncer 3/4] COPY common/pgbouncer/entrypoint.sh /usr/local/bin/pgbouncer-entrypoint
+#14 CACHED
+
+#15 [pgbouncer 4/4] RUN chmod 0755 /usr/local/bin/pgbouncer-entrypoint
+#15 CACHED
+
+#16 [burst] exporting to image
+#16 exporting layers 0.0s done
+#16 exporting manifest sha256:a2583f8cea2f3648e790cb7018789588ff04324e1b72de7772216ed0f14e7a71 0.0s done
+#16 exporting config sha256:aca31c140612b65bcdeeb4c333f4d52b054d184374d0a98feffc081f30ba6993 0.0s done
+#16 exporting attestation manifest sha256:f781909bcd5db6c2da63e50c306f5d7b98ef5dbff28b7d68334ef1ec31041b75 0.0s done
+#16 exporting manifest list sha256:c4f5296763d1615d2b0afe4280891caa4d510d81a292bdfe721be59772aa1305 0.0s done
+#16 naming to docker.io/library/tlb-pgbench:latest done
+#16 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#16 DONE 0.2s
+
+#17 [producer] exporting to image
+#17 exporting layers 0.0s done
+#17 exporting manifest sha256:ecb51f62602fd2e595930136d1b8f1f05c1e8d94f0009e6dccb4d34119ca33e9 0.0s done
+#17 exporting config sha256:4a480a2d42ac0aedbf5dee17d71a53cb93b06f96faa8e9825fa230289c01eb8c 0.0s done
+#17 exporting attestation manifest sha256:7f570b7640d1d620310542cc70326754377144fecb3ccd73fb941c706d702995 0.0s done
+#17 exporting manifest list sha256:c625d0b6e70792bdc6bc9899f828a4a77adbc8a14283384e413a2849c61cecbc 0.0s done
+#17 naming to docker.io/library/tlb-pgbench:latest done
+#17 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#17 DONE 0.2s
+
+#18 [reader] exporting to image
+#18 exporting layers 0.0s done
+#18 exporting manifest sha256:565956c377cfb27efa626e5985cf21e5845faae5dc72ce8e2e85afe355dd4426 0.0s done
+#18 exporting config sha256:04377f1216223ff9ea8272bfc52ff53e080dfcb939dca3e488645dc06177aad4 0.0s done
+#18 exporting attestation manifest sha256:5f782182e7f362d2c0f57fcbc3e8f1e62e3a6dc683ec284565d636b9fd6f6082 0.0s done
+#18 exporting manifest list sha256:6c93f8ef9be539864215ea273b51ce81d6331a40dcd6ef5bab25ad5bb8bd3b54 0.0s done
+#18 naming to docker.io/library/tlb-pgbench:latest done
+#18 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#18 DONE 0.3s
+
+#19 [pgbouncer] exporting to image
+#19 exporting layers 0.0s done
+#19 exporting manifest sha256:b8572a7cd1947df7ce1191b3325782dc7c14ad26d1600fd949cfb2e6e8d4e4a9 0.0s done
+#19 exporting config sha256:004f89c3fea16629d96fd60c295c27616b607dfd458d0309a270e2495f5ecab6 0.0s done
+#19 exporting attestation manifest sha256:2054f250ca6219d23f689bfa43fc0e4fcae73c9acb41d31eb3d3e6980bf82990 0.0s done
+#19 exporting manifest list sha256:d6e9b0716345478d6d46cd61dc65ba23af007c873f874398609034c8e2c58245 0.0s done
+#19 naming to docker.io/library/tlb-pgbouncer:latest done
+#19 unpacking to docker.io/library/tlb-pgbouncer:latest 0.0s done
+#19 DONE 0.3s
+
+#20 [collector] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#20 ...
+
+#21 [producer] resolving provenance for metadata file
+#21 DONE 0.1s
+
+#22 [burst] resolving provenance for metadata file
+#22 DONE 0.1s
+
+#23 [pgbouncer] resolving provenance for metadata file
+#23 DONE 0.0s
+
+#24 [reader] resolving provenance for metadata file
+#24 DONE 0.1s
+
+#20 [collector] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#20 DONE 0.8s
+
+#25 [collector] docker-image://docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+#25 resolve docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183 0.0s done
+#25 CACHED
+
+#26 [collector internal] load metadata for docker.io/library/rust:1-slim-bookworm
+#26 DONE 0.7s
+
+#27 [seed internal] load metadata for docker.io/library/debian:12-slim
+#27 DONE 0.7s
+
+#6 [seed internal] load .dockerignore
+#6 CACHED
+
+#28 [collector stage-1 1/2] FROM docker.io/library/debian:12-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
+#28 resolve docker.io/library/debian:12-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e 0.0s done
+#28 DONE 0.0s
+
+#29 [collector builder 1/8] FROM docker.io/library/rust:1-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126
+#29 resolve docker.io/library/rust:1-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126 0.0s done
+#29 DONE 0.0s
+
+#30 [collector internal] load build context
+#30 transferring context: 117.58kB done
+#30 transferring context: 117.58kB done
+#30 DONE 0.0s
+
+#31 [collector builder 3/8] COPY Cargo.toml Cargo.lock ./
+#31 CACHED
+
+#32 [collector builder 2/8] WORKDIR /src
+#32 CACHED
+
+#33 [collector builder 4/8] COPY common/tlb-core ./common/tlb-core
+#33 CACHED
+
+#34 [collector builder 6/8] COPY project-a/consumer ./project-a/consumer
+#34 CACHED
+
+#35 [collector builder 8/8] RUN --mount=type=cache,target=/usr/local/cargo/registry     --mount=type=cache,target=/src/target     cargo build --release --locked --workspace  && mkdir -p /out  && find target/release -maxdepth 1 -type f -perm -u+x -exec cp {} /out/ \;
+#35 CACHED
+
+#36 [collector builder 5/8] COPY common/tools ./common/tools
+#36 CACHED
+
+#37 [collector builder 7/8] COPY project-b/consumer ./project-b/consumer
+#37 CACHED
+
+#38 [consumer stage-1 2/2] COPY --from=builder /out/ /usr/local/bin/
+#38 CACHED
+
+#39 [consumer] exporting to image
+#39 exporting layers done
+#39 exporting manifest sha256:f846872cb33b9e9348fcf3bb96e603e2d30e3cf642ec3efdb2d08ac42bafd74b done
+#39 exporting config sha256:d39261f7e727aad1558c23a60375de1620e68a6219a1ec7a77e40be33fafd4be done
+#39 exporting attestation manifest sha256:4395b6005f406837efc69d9834e81ebe66e377c87a405effda79224475abe720 0.0s done
+#39 exporting manifest list sha256:15b9ac768316ab6472705ed2e7b9992b983841d48c8341a492aee44baff081a7 0.0s done
+#39 naming to docker.io/library/tlb-rust:latest done
+#39 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#39 DONE 0.1s
+
+#40 [collector] exporting to image
+#40 exporting layers done
+#40 exporting manifest sha256:aea29326aa4846992cb98d5575f72fe6c456955337f2141876adc9a84d7ff5b5 done
+#40 exporting config sha256:e55bc5cf68afb999fb11ec08b0c1f9afbeac65175a2e42f18e7cf78bdd81ec84 0.0s done
+#40 exporting attestation manifest sha256:a5729d67a2348c7d523670983ee1ead55d94606ca93edde75debc1b0ee1e7e57 0.0s done
+#40 exporting manifest list sha256:0f7f8ec899ea33a9f5a38c1dc088a7af38d4a5a506c1186ef5539406e79d605d 0.0s done
+#40 naming to docker.io/library/tlb-rust:latest done
+#40 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#40 DONE 0.1s
+
+#41 [seed] exporting to image
+#41 exporting layers done
+#41 exporting manifest sha256:ed04fee5e43540dac362d5181bcf97e2cd5d4b51037e19577968ac5bd7f37020 done
+#41 exporting config sha256:89faf5a03599764ac8ea75923283d57d9c1b9019fadeab60491637a97a001cb4 done
+#41 exporting attestation manifest sha256:514aaa466d1733b9940fe1e73b7a060412b4caffbe8d3d26ea39a3bce83e0e5d 0.0s done
+#41 exporting manifest list sha256:24366f4325706957b23b490b2dfb6ebe3d9d22bc651c48ef43ade26243b604e0 0.0s done
+#41 naming to docker.io/library/tlb-rust:latest done
+#41 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#41 DONE 0.1s
+
+#42 [collector] resolving provenance for metadata file
+#42 DONE 0.1s
+
+#43 [consumer] resolving provenance for metadata file
+#43 DONE 0.1s
+
+#44 [seed] resolving provenance for metadata file
+#44 DONE 0.0s
+ Image tlb-pgbench:latest Built 
+ Image tlb-rust:latest Built 
+ Image tlb-rust:latest Built 
+ Image tlb-pgbouncer:latest Built 
+ Image tlb-pgbench:latest Built 
+ Image tlb-pgbench:latest Built 
+ Image tlb-rust:latest Built 
+ Image tlb-rust:latest Building 
+ Image tlb-rust:latest Building 
+ Image tlb-pgbouncer:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-pgbench:latest Building 
+ Image tlb-rust:latest Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.53kB done
+#1 DONE 0.0s
+
+#2 [pgbouncer internal] load build definition from Dockerfile
+#2 transferring dockerfile: 692B done
+#2 DONE 0.0s
+
+#3 [seed internal] load build definition from rust.Dockerfile
+#3 transferring dockerfile: 828B done
+#3 DONE 0.0s
+
+#4 [reader internal] load build definition from Dockerfile
+#4 transferring dockerfile: 419B done
+#4 DONE 0.0s
+
+#5 [producer internal] load metadata for docker.io/library/postgres:18
+#5 DONE 0.0s
+
+#6 [burst internal] load .dockerignore
+#6 transferring context: 73B done
+#6 DONE 0.0s
+
+#7 [pgbouncer internal] load build context
+#7 DONE 0.0s
+
+#8 [producer internal] load build context
+#8 DONE 0.0s
+
+#9 [pgbouncer 1/4] FROM docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328
+#9 resolve docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328 0.0s done
+#9 resolve docker.io/library/postgres:18@sha256:64c8b0d31e4ab6ea665e8426ea406a94bf52de3c05b3a4a8bf713704eefa9328 0.0s done
+#9 DONE 0.0s
+
+#8 [burst internal] load build context
+#8 transferring context: 3.12kB 0.0s done
+#8 DONE 0.0s
+
+#10 [producer 3/4] COPY common/pgbench/run-pgbench.sh /usr/local/bin/run-pgbench
+#10 CACHED
+
+#11 [producer 2/4] COPY common/pgbench/*.sql /scripts/common/
+#11 CACHED
+
+#12 [producer 4/4] RUN chmod 0755 /usr/local/bin/run-pgbench
+#12 CACHED
+
+#7 [pgbouncer internal] load build context
+#7 transferring context: 2.15kB done
+#7 DONE 0.0s
+
+#13 [pgbouncer 2/4] RUN apt-get update  && apt-get install -y --no-install-recommends pgbouncer  && rm -rf /var/lib/apt/lists/*
+#13 CACHED
+
+#14 [pgbouncer 3/4] COPY common/pgbouncer/entrypoint.sh /usr/local/bin/pgbouncer-entrypoint
+#14 CACHED
+
+#15 [pgbouncer 4/4] RUN chmod 0755 /usr/local/bin/pgbouncer-entrypoint
+#15 CACHED
+
+#16 [burst] exporting to image
+#16 exporting layers 0.0s done
+#16 exporting manifest sha256:dafd2886ca02dc25ae26555ce802a1f613f353586fe9a18840998faac1653429 0.0s done
+#16 exporting config sha256:758e5e0c1b9f58915070686ce5514f010964f3a7b9cc6609d39b5eed4f758866 0.0s done
+#16 exporting attestation manifest sha256:842e2a831eed40c913fc720645aa7f5df90fc710a5e230709dec18992c841be0
+#16 ...
+
+#17 [seed] resolve image config for docker-image://docker.io/docker/dockerfile:1
+#17 DONE 0.3s
+
+#16 [burst] exporting to image
+#16 exporting attestation manifest sha256:842e2a831eed40c913fc720645aa7f5df90fc710a5e230709dec18992c841be0 0.0s done
+#16 exporting manifest list sha256:9dea1bae4aea34e984039ecdec0c391fe52324b3eee6c442af9f9daf4ac71406 0.0s done
+#16 naming to docker.io/library/tlb-pgbench:latest done
+#16 unpacking to docker.io/library/tlb-pgbench:latest
+#16 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#16 DONE 0.2s
+
+#18 [reader] exporting to image
+#18 exporting layers 0.0s done
+#18 exporting manifest sha256:3514c90c7f2b89c98ad4f58be75ca81308774995cc3b50b304263afef9f84912 0.0s done
+#18 exporting config sha256:c2080bc4e4ff3108d9e87522877e15b50ac5f85cffca27fd7ce00f4cb3709e69 0.0s done
+#18 exporting attestation manifest sha256:e568c53d7397a3869d9fca06fdea8c1a2f477927698c138d99f632e73ef4575a 0.0s done
+#18 exporting manifest list sha256:dd1e628b6be4007c614c7087cc35fe78bd572230ae7d5eb24d0c586204b95fab 0.0s done
+#18 naming to docker.io/library/tlb-pgbench:latest done
+#18 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#18 DONE 0.2s
+
+#19 [seed] docker-image://docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+#19 resolve docker.io/docker/dockerfile:1@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183 0.1s done
+#19 CACHED
+
+#20 [pgbouncer] exporting to image
+#20 exporting layers 0.0s done
+#20 exporting manifest sha256:196b149323d38bd9bfb79236db499b81b40f3143132f7e649b04207345d09839 0.0s done
+#20 exporting config sha256:339cfd9d674e26386d4961d825abcd2e169afb0abd741716344fcb3e59ec01b7 0.0s done
+#20 exporting attestation manifest sha256:3f9d03122c99de43a8a50259ef6e55574b22c4fae4945fb0a64509f126f811b6 0.0s done
+#20 exporting manifest list sha256:c6e8f7f76a3f9fb5d05fa8b4d9360f0887d2378c4569e487a0eb09056404cc00 0.0s done
+#20 naming to docker.io/library/tlb-pgbouncer:latest done
+#20 unpacking to docker.io/library/tlb-pgbouncer:latest 0.0s done
+#20 DONE 0.3s
+
+#21 [producer] exporting to image
+#21 exporting layers 0.0s done
+#21 exporting manifest sha256:112d04ed32688e3397a3114b9b6d6b163c0a14bd6ceb9903959719e60805c8af 0.0s done
+#21 exporting config sha256:5b4a57a5816774b9cd57c65009b17796757f8ce2db127ffdf2d8c3a2e7e346d4 0.0s done
+#21 exporting attestation manifest sha256:6c17d4c663b6b84ba7136007be0530c0459157c3c34ce7203676be121bb9b0f5 0.0s done
+#21 exporting manifest list sha256:3b4cb9c438581d2d22374c1eeca5394a480a14b5ab5faeb6e5b5e52dd1a80905 0.0s done
+#21 naming to docker.io/library/tlb-pgbench:latest 0.0s done
+#21 unpacking to docker.io/library/tlb-pgbench:latest 0.0s done
+#21 DONE 0.3s
+
+#22 [seed internal] load metadata for docker.io/library/debian:12-slim
+#22 ...
+
+#23 [burst] resolving provenance for metadata file
+#23 DONE 0.1s
+
+#24 [pgbouncer] resolving provenance for metadata file
+#24 DONE 0.1s
+
+#25 [reader] resolving provenance for metadata file
+#25 DONE 0.1s
+
+#26 [producer] resolving provenance for metadata file
+#26 DONE 0.0s
+
+#27 [seed internal] load metadata for docker.io/library/rust:1-slim-bookworm
+#27 DONE 0.2s
+
+#22 [consumer internal] load metadata for docker.io/library/debian:12-slim
+#22 DONE 0.2s
+
+#6 [seed internal] load .dockerignore
+#6 CACHED
+
+#28 [collector internal] load build context
+#28 DONE 0.0s
+
+#29 [collector stage-1 1/2] FROM docker.io/library/debian:12-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
+#29 resolve docker.io/library/debian:12-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e
+#29 resolve docker.io/library/debian:12-slim@sha256:e67eeead736ff7bbe258ef088bff683635c561b1fcfefad0806c1df4ab49ce0e 0.1s done
+#29 DONE 0.1s
+
+#30 [collector builder 1/8] FROM docker.io/library/rust:1-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126
+#30 resolve docker.io/library/rust:1-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126 0.1s done
+#30 DONE 0.1s
+
+#28 [seed internal] load build context
+#28 transferring context: 117.58kB 0.0s done
+#28 DONE 0.0s
+
+#31 [collector builder 6/8] COPY project-a/consumer ./project-a/consumer
+#31 CACHED
+
+#32 [collector builder 4/8] COPY common/tlb-core ./common/tlb-core
+#32 CACHED
+
+#33 [collector builder 2/8] WORKDIR /src
+#33 CACHED
+
+#34 [collector builder 5/8] COPY common/tools ./common/tools
+#34 CACHED
+
+#35 [collector builder 7/8] COPY project-b/consumer ./project-b/consumer
+#35 CACHED
+
+#36 [collector builder 8/8] RUN --mount=type=cache,target=/usr/local/cargo/registry     --mount=type=cache,target=/src/target     cargo build --release --locked --workspace  && mkdir -p /out  && find target/release -maxdepth 1 -type f -perm -u+x -exec cp {} /out/ \;
+#36 CACHED
+
+#37 [collector builder 3/8] COPY Cargo.toml Cargo.lock ./
+#37 CACHED
+
+#38 [collector stage-1 2/2] COPY --from=builder /out/ /usr/local/bin/
+#38 CACHED
+
+#39 [seed] exporting to image
+#39 exporting layers done
+#39 exporting manifest sha256:92cfdf436bdaa20ee19440f7fa52902fbb009306aa2bc0ee0173a1be8432c081 done
+#39 exporting config sha256:1b81f102437103f4231ff357a5f67f87e663d594df92a41f61c7f6f0918d6c7d done
+#39 exporting attestation manifest sha256:29ea7df04b154f455480d10adecd417d7fff8863fbe409be92afb9d15bb44325 0.0s done
+#39 exporting manifest list sha256:7e1762c7512d345f33a7fbd18022c52fb6530f9811c7129994cc1ba2070190ae 0.0s done
+#39 naming to docker.io/library/tlb-rust:latest done
+#39 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#39 DONE 0.1s
+
+#40 [collector] exporting to image
+#40 exporting layers done
+#40 exporting manifest sha256:dd2d4f61e9c624e68f923be724d643035420854382d965231543670cd9e3e19f done
+#40 exporting config sha256:19074f003f39cf6dc34954e1bcfc6ecb08db64c6f141294be6b450cd3a7d8a24 done
+#40 exporting attestation manifest sha256:883f29cbcef8172b9b3a9722cead6d5f185c7061174662a4e139556d7e620395 0.0s done
+#40 exporting manifest list sha256:90f3310a14fb2b5030a865e75755a5c47dcf0f347aca9118e979dc02c87ac243 0.0s done
+#40 naming to docker.io/library/tlb-rust:latest done
+#40 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#40 DONE 0.1s
+
+#41 [consumer] exporting to image
+#41 exporting layers done
+#41 exporting manifest sha256:07a33b670504901b79514e548d7ea82683b3f516f244de43359e4ed42f3f11fa done
+#41 exporting config sha256:4c19e3fc823e5d82e819911a8e04d0c288850d8e862381081adaee4be4497b7b done
+#41 exporting attestation manifest sha256:30d0a99623ab7934aa1bedcfe979b1161be89533fae2f79c340ae74987bf0b4f 0.0s done
+#41 exporting manifest list sha256:400271b5d8e2fb31c09a9a4ee8da355800f619f7911e130ed4b4c998b457dec3 0.0s done
+#41 naming to docker.io/library/tlb-rust:latest done
+#41 unpacking to docker.io/library/tlb-rust:latest 0.0s done
+#41 DONE 0.2s
+
+#42 [seed] resolving provenance for metadata file
+#42 DONE 0.1s
+
+#43 [collector] resolving provenance for metadata file
+#43 DONE 0.0s
+
+#44 [consumer] resolving provenance for metadata file
+#44 DONE 0.0s
+ Image tlb-rust:latest Built 
+ Image tlb-pgbouncer:latest Built 
+ Image tlb-pgbench:latest Built 
+ Image tlb-pgbench:latest Built 
+ Image tlb-rust:latest Built 
+ Image tlb-pgbench:latest Built 
+ Image tlb-rust:latest Built 
+  [32mok[0m    images: tlb-pgbench tlb-pgbouncer tlb-rust 
+[1;34m==>[0m calibration: saturation pilot of A and B (60 s each)
+[00:29:15] a/pilot/a/rep-1: preparing (fresh database)
+[00:29:32] a/pilot/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:30:34] a/pilot/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:30:38] a/pilot/a/rep-1: backlog left: 0 (drain took 3s)
+[00:30:42] a/pilot/a/rep-1: done → results/smoke-20261127-0029/pilot/a/rep-1
+[00:30:44] b/pilot/b/rep-1: preparing (fresh database)
+[00:31:02] b/pilot/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:32:04] b/pilot/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:32:04] b/pilot/b/rep-1: backlog left: 0 (drain took 0s)
+[00:32:09] b/pilot/b/rep-1: done → results/smoke-20261127-0029/pilot/b/rep-1
+  [32mok[0m    A=5677 tps, B=3021 tps → C2/C3 rate 1800 tps, C3 burst 3600 tps (results/smoke-20261127-0029/calibration.env)
+[1;34m==>[0m campaign smoke-20261127-0029: c1 c2 c3 c5 (≈ 39 min) → results/smoke-20261127-0029/
+campaign smoke-20261127-0029 started 2026-11-27T00:32:10Z at d24d03e: c1 c2 c3 c5
+[00:32:10] a/c1/a/rep-1: preparing (fresh database)
+[00:32:27] a/c1/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:33:30] a/c1/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:33:34] a/c1/a/rep-1: backlog left: 0 (drain took 3s)
+[00:33:38] a/c1/a/rep-1: done → results/smoke-20261127-0029/c1/a/rep-1
+[00:33:40] b/c1/b/rep-1: preparing (fresh database)
+[00:33:58] b/c1/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:35:00] b/c1/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:35:00] b/c1/b/rep-1: backlog left: 0 (drain took 0s)
+[00:35:05] b/c1/b/rep-1: done → results/smoke-20261127-0029/c1/b/rep-1
+[00:35:06] b/c1/b-1rt/rep-1: preparing (fresh database)
+[00:35:21] b/c1/b-1rt/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=max readers=0 burst=0
+[00:36:23] b/c1/b-1rt/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:36:25] b/c1/b-1rt/rep-1: backlog left: 0 (drain took 1s)
+[00:36:29] b/c1/b-1rt/rep-1: done → results/smoke-20261127-0029/c1/b-1rt/rep-1
+[00:36:30] a/c2/a/rep-1: preparing (fresh database)
+[00:36:46] a/c2/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:37:49] a/c2/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:37:49] a/c2/a/rep-1: backlog left: 0 (drain took 0s)
+[00:37:53] a/c2/a/rep-1: done → results/smoke-20261127-0029/c2/a/rep-1
+[00:37:54] b/c2/b/rep-1: preparing (fresh database)
+[00:38:10] b/c2/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:39:13] b/c2/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:39:13] b/c2/b/rep-1: backlog left: 0 (drain took 0s)
+[00:39:17] b/c2/b/rep-1: done → results/smoke-20261127-0029/c2/b/rep-1
+[00:39:19] a/c2/a-delete/rep-1: preparing (fresh database)
+[00:39:34] a/c2/a-delete/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:40:37] a/c2/a-delete/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:40:37] a/c2/a-delete/rep-1: backlog left: 0 (drain took 0s)
+[00:40:42] a/c2/a-delete/rep-1: done → results/smoke-20261127-0029/c2/a-delete/rep-1
+[00:40:43] b/c2/b-slots1/rep-1: preparing (fresh database)
+[00:40:58] b/c2/b-slots1/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=0
+[00:42:01] b/c2/b-slots1/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:42:01] b/c2/b-slots1/rep-1: backlog left: 0 (drain took 0s)
+[00:42:06] b/c2/b-slots1/rep-1: done → results/smoke-20261127-0029/c2/b-slots1/rep-1
+[00:42:07] a/c3/a/rep-1: preparing (fresh database)
+[00:42:22] a/c3/a/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[00:43:25] a/c3/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:43:26] a/c3/a/rep-1: backlog left: 0 (drain took 0s)
+[00:43:30] a/c3/a/rep-1: done → results/smoke-20261127-0029/c3/a/rep-1
+[00:43:31] b/c3/b/rep-1: preparing (fresh database)
+[00:43:49] b/c3/b/rep-1: load started: duration=60s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[00:44:52] b/c3/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:44:53] b/c3/b/rep-1: backlog left: 0 (drain took 0s)
+[00:44:57] b/c3/b/rep-1: done → results/smoke-20261127-0029/c3/b/rep-1
+[00:44:58] a/c5/a/rep-1: preparing (fresh database)
+[00:45:14] a/c5/a/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:46:18] a/c5/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:46:19] a/c5/a/rep-1: backlog left: 0 (drain took 0s)
+[00:46:23] a/c5/a/rep-1: done → results/smoke-20261127-0029/c5/a/rep-1
+[00:46:24] b/c5/b/rep-1: preparing (fresh database)
+[00:46:41] b/c5/b/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:47:46] b/c5/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:47:47] b/c5/b/rep-1: backlog left: 0 (drain took 0s)
+[00:47:51] b/c5/b/rep-1: done → results/smoke-20261127-0029/c5/b/rep-1
+[00:47:52] b/c5/b-1rt/rep-1: preparing (fresh database)
+[00:48:08] b/c5/b-1rt/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:49:13] b/c5/b-1rt/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:49:13] b/c5/b-1rt/rep-1: backlog left: 0 (drain took 0s)
+[00:49:17] b/c5/b-1rt/rep-1: done → results/smoke-20261127-0029/c5/b-1rt/rep-1
+[00:49:19] b/c5/b-slots64/rep-1: preparing (fresh database)
+[00:49:34] b/c5/b-slots64/rep-1: load started: duration=60s clients=2000 replicas=2 via=pgbouncer rate=max readers=1 burst=0
+[00:50:39] b/c5/b-slots64/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:50:39] b/c5/b-slots64/rep-1: backlog left: 0 (drain took 0s)
+[00:50:43] b/c5/b-slots64/rep-1: done → results/smoke-20261127-0029/c5/b-slots64/rep-1
+campaign finished 2026-11-27T00:50:44Z, building the report
+analyzed c1/a/rep-1
+analyzed c1/b/rep-1
+analyzed c1/b-1rt/rep-1
+analyzed c2/a/rep-1
+analyzed c2/a-delete/rep-1
+analyzed c2/b/rep-1
+analyzed c2/b-slots1/rep-1
+analyzed c3/a/rep-1
+analyzed c3/b/rep-1
+analyzed c5/a/rep-1
+analyzed c5/b/rep-1
+analyzed c5/b-1rt/rep-1
+analyzed c5/b-slots64/rep-1
+analyzed pilot/a/rep-1
+analyzed pilot/b/rep-1
+wrote /results/smoke-20261127-0029/summary.md, runs.csv and charts/
+[1;34m==>[0m report → results/smoke-20261127-0029/{summary.md,runs.csv,charts/}
+analyzed c1/a/rep-1
+analyzed c1/b/rep-1
+analyzed c1/b-1rt/rep-1
+analyzed c2/a/rep-1
+analyzed c2/a-delete/rep-1
+analyzed c2/b/rep-1
+analyzed c2/b-slots1/rep-1
+analyzed c3/a/rep-1
+analyzed c3/b/rep-1
+analyzed c5/a/rep-1
+analyzed c5/b/rep-1
+analyzed c5/b-1rt/rep-1
+analyzed c5/b-slots64/rep-1
+analyzed pilot/a/rep-1
+analyzed pilot/b/rep-1
+wrote /results/smoke-20261127-0029/summary.md, runs.csv and charts/
+[1;34m==>[0m archive → results/smoke-20261127-0029.tar.gz
+  [32mok[0m    4.2M (raw logs included)
+[1;34m==>[0m finished 2026-11-27T00:50:48Z
+  report:   results/smoke-20261127-0029/summary.md
+  charts:   results/smoke-20261127-0029/charts/
+  archive:  results/smoke-20261127-0029.tar.gz

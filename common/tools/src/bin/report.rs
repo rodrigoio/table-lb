@@ -141,17 +141,28 @@ struct LatencyLog {
     points: Vec<(f64, u64)>,
 }
 
-/// Parses pgbench per-transaction logs `<role>.<pid>[.<thread>]`.
+/// Strips `<role>.` or `<role>-<replica>.` from a raw file name: a role may
+/// run as several pgbench containers (producer-1, producer-2, ...).
+fn strip_role<'a>(name: &'a str, role: &str) -> Option<&'a str> {
+    let rest = name.strip_prefix(role)?;
+    if let Some(rest) = rest.strip_prefix('.') {
+        return Some(rest);
+    }
+    let rest = rest.strip_prefix('-')?;
+    let (replica, rest) = rest.split_once('.')?;
+    (!replica.is_empty() && replica.chars().all(|c| c.is_ascii_digit())).then_some(rest)
+}
+
+/// Parses pgbench per-transaction logs `<role>[-<replica>].<pid>[.<thread>]`.
 fn read_pgbench(run: &Run, role: &str) -> Result<Option<LatencyLog>> {
-    let mut histogram = Histogram::<u64>::new_with_bounds(1, 120_000_000, 3)?;
+    let mut histogram = Histogram::<u64>::new_with_bounds(1, 600_000_000, 3)?;
     let mut points = Vec::new();
     let mut found = false;
-    let prefix = format!("{role}.");
     for entry in fs::read_dir(run.raw())? {
         let path = entry?.path();
         let Some(name) = path.file_name().and_then(|n| n.to_str()) else { continue };
-        let Some(rest) = name.strip_prefix(&prefix) else { continue };
-        if !rest.chars().all(|c| c.is_ascii_digit() || c == '.') {
+        let Some(rest) = strip_role(name, role) else { continue };
+        if rest.is_empty() || !rest.chars().all(|c| c.is_ascii_digit() || c == '.') {
             continue;
         }
         found = true;
@@ -174,16 +185,30 @@ fn read_pgbench(run: &Run, role: &str) -> Result<Option<LatencyLog>> {
     Ok(found.then_some(LatencyLog { histogram, points }))
 }
 
+/// Throughput and processed transactions from the pgbench output
+/// (`<role>.out`, or the sum over `<role>-<replica>.out`).
 fn pgbench_summary(run: &Run, role: &str) -> (Option<f64>, Option<f64>) {
-    let text = fs::read_to_string(run.raw().join(format!("{role}.out"))).unwrap_or_default();
-    let mut tps = None;
-    let mut processed = None;
-    for line in text.lines() {
-        if let Some(rest) = line.strip_prefix("tps = ") {
-            tps = rest.split_whitespace().next().and_then(|v| v.parse().ok());
+    let mut tps: Option<f64> = None;
+    let mut processed: Option<f64> = None;
+    let Ok(entries) = fs::read_dir(run.raw()) else { return (None, None) };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else { continue };
+        if strip_role(name, role) != Some("out") {
+            continue;
         }
-        if let Some(rest) = line.strip_prefix("number of transactions actually processed: ") {
-            processed = rest.split(['/', ' ']).next().and_then(|v| v.parse().ok());
+        let text = fs::read_to_string(&path).unwrap_or_default();
+        for line in text.lines() {
+            if let Some(v) = line.strip_prefix("tps = ").and_then(|r| r.split_whitespace().next()) {
+                if let Ok(v) = v.parse::<f64>() {
+                    *tps.get_or_insert(0.0) += v;
+                }
+            }
+            if let Some(rest) = line.strip_prefix("number of transactions actually processed: ") {
+                if let Some(v) = rest.split(['/', ' ']).next().and_then(|v| v.parse::<f64>().ok()) {
+                    *processed.get_or_insert(0.0) += v;
+                }
+            }
         }
     }
     (tps, processed)
@@ -838,4 +863,21 @@ fn main() -> Result<()> {
     fs::write(campaign.join("summary.md"), md)?;
     println!("wrote {}/summary.md, runs.csv and charts/", campaign.display());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::strip_role;
+
+    #[test]
+    fn role_files_with_and_without_replicas() {
+        assert_eq!(strip_role("producer.123", "producer"), Some("123"));
+        assert_eq!(strip_role("producer.123.4", "producer"), Some("123.4"));
+        assert_eq!(strip_role("producer-2.77.1", "producer"), Some("77.1"));
+        assert_eq!(strip_role("producer-12.out", "producer"), Some("out"));
+        assert_eq!(strip_role("producer.out", "producer"), Some("out"));
+        assert_eq!(strip_role("producer-x.out", "producer"), None);
+        assert_eq!(strip_role("burst.out", "producer"), None);
+        assert_eq!(strip_role("producerx.1", "producer"), None);
+    }
 }

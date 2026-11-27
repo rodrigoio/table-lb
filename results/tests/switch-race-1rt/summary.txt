@@ -1,0 +1,23 @@
+# switch-race-1rt
+date=2026-11-27T00:26:16Z
+project=b script=/scripts/project/producer-1rt.sql clients=32 transactions=10000 window=100
+sleep_max_ms=5 poll_ms=1 lock_slots=64 expect_loss=0
+
+## pgbench
+number of transactions actually processed: 320000/320000
+number of failed transactions: 0 (0.000%)
+latency average = 4.550 ms
+tps = 6936.046981 (without initial connection time)
+
+## consumer
+switches=24
+cycles=24 rows_read=320000 switch_wait_ms_avg=85.78 switch_wait_ms_max=178.99
+rows_left_in_buffers=0
+
+## verify (consumed)
+expected_events=320000
+consumed_events=320000
+missing_events=0
+duplicated_events=0
+unexpected_events=0
+result=PASS
