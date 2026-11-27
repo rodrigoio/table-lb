@@ -4,7 +4,8 @@
 //! only one that knows when the cold buffer has been consumed completely.
 //! Cycle:
 //!
-//!   1. wait for data in the HOT buffer (poll every POLL_MS)
+//!   1. keep the HOT buffer open for at least MIN_CYCLE_MS after the previous
+//!      switch, then wait for data in it (poll every POLL_MS)
 //!   2. switch: UPDATE buffer_control SET active = <cold> ...
 //!      Producers hold FOR SHARE on their controller slot while inserting, so
 //!      this UPDATE waits for every in-flight insert. Once it commits, nobody
@@ -16,7 +17,14 @@
 //!      before it only causes an idempotent re-apply on restart)
 //!   5. log the cycle and start over
 //!
-//! Environment: DATABASE_URL, POLL_MS (100), AUDIT (0|1)
+//! MIN_CYCLE_MS trades end-to-end lag for fewer, larger cycles: with 0 the
+//! consumer switches as soon as the hot buffer has one row (at moderate load
+//! that is dozens of switches per second, each one paying the controller
+//! UPDATE, a producer stall and a TRUNCATE for a few dozen rows). A drain that
+//! takes longer than MIN_CYCLE_MS makes the next switch immediate, so under
+//! saturation the cycle is self-clocked exactly as with 0.
+//!
+//! Environment: DATABASE_URL, POLL_MS (100), MIN_CYCLE_MS (0), AUDIT (0|1)
 
 use std::time::{Duration, Instant};
 
@@ -215,12 +223,13 @@ impl Consumer {
 #[tokio::main]
 async fn main() -> Result<()> {
     let poll = Duration::from_millis(config::env_or("POLL_MS", 100u64));
+    let min_cycle = Duration::from_millis(config::env_or("MIN_CYCLE_MS", 0u64));
     let audit = config::env_flag("AUDIT");
     let client = db::connect(&config::database_url(), "consumer-b").await?;
     let mut consumer = Consumer::new(client, poll, audit).await?;
     let mut shutdown = Shutdown::install();
     println!(
-        "consumer-b: poll={poll:?} audit={audit} active=buffer_{} generation={}",
+        "consumer-b: poll={poll:?} min_cycle={min_cycle:?} audit={audit} active=buffer_{} generation={}",
         consumer.active, consumer.generation
     );
 
@@ -231,13 +240,23 @@ async fn main() -> Result<()> {
         println!("drained {leftovers} leftover rows from buffer_{}", consumer.cold());
     }
 
+    // When the hot buffer was opened, as far as this process knows: the first
+    // cycle also honours MIN_CYCLE_MS.
+    let mut opened = Instant::now();
     // After a shutdown request, at most one more cycle flushes the hot buffer.
     let mut flush_cycles = 1;
     loop {
+        // Keep the hot buffer open for MIN_CYCLE_MS; a shutdown request cuts
+        // the hold short so that the final flush is prompt.
+        let held = opened.elapsed();
+        if held < min_cycle {
+            shutdown.sleep(min_cycle - held).await;
+        }
         let Some(wait_ms) = consumer.wait_for_data(&mut shutdown).await? else {
             break;
         };
         let switch_ms = consumer.switch().await?;
+        opened = Instant::now();
         consumer.drain(Some(wait_ms), Some(switch_ms)).await?;
         if shutdown.is_requested() {
             if flush_cycles == 0 {

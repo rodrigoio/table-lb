@@ -49,31 +49,61 @@ Top wait events (avg active sessions, repetition 1):
 - **a**: LWLock:WALWrite 11.15, CPU:running 4.00, IO:WalSync 0.76, LWLock:BufferContent 0.58, LWLock:WALInsert 0.57
 - **b**: LWLock:WALWrite 5.11, CPU:running 2.02, IO:WalSync 0.72, LWLock:BufferContent 0.25, LWLock:WALInsert 0.11
 
-Charts:
+Charts (each one states under its title what it shows and what it is for):
 
 ![pilot Producer latency p99 per 5 s](charts/pilot-producer-p99.svg)
 
+*Shows:* p99 latency of the base producer's inserts in 5 s windows (repetition 1), from the scheduled send time to the commit: time queued in the client is included. *Purpose:* See whether insert latency stays flat or degrades over the run, and how bursts and B's switches show up. Values above a client's timeout would be failed inserts.
+
 ![pilot Backlog (ingested − consumed)](charts/pilot-backlog.svg)
+
+*Shows:* Events committed by the producers minus events applied to orders, sampled every second (repetition 1). *Purpose:* Check that the consumer keeps up: A stays near zero, B saws up and down once per cycle. A line that keeps rising means the consumer is falling behind.
 
 ![pilot End-to-end lag p95 per batch / cycle](charts/pilot-lag.svg)
 
+*Shows:* p95 age of the events (commit → applied to orders) of each batch (A) or cycle (B), at the time the batch finished (repetition 1). *Purpose:* Freshness of orders over time. B's floor is one cycle; peaks in A are bursts the workers could not absorb at once.
+
 ![pilot Inbound table(s) total size](charts/pilot-inbound-size.svg)
+
+*Shows:* Total size (heap + indexes + TOAST) of the inbound tables: inbox in A, buffer_0 + buffer_1 in B (repetition 1). *Purpose:* Growth and bloat on the ingestion side: A's inbox keeps growing in update mode, B returns to zero at every TRUNCATE.
 
 ![pilot Inbound table(s) dead tuples](charts/pilot-inbound-dead.svg)
 
+*Shows:* Dead tuples in the inbound tables (repetition 1). *Purpose:* Vacuum debt created by A's UPDATE / DELETE cleanup; B's buffers never hold dead tuples.
+
 ![pilot orders dead tuples](charts/pilot-orders-dead.svg)
+
+*Shows:* Dead tuples in the business table orders (repetition 1). *Purpose:* Vacuum debt left by the MERGE updates; fewer writes per event (B coalesces the events of an order within a cycle) leave less debt.
 
 ![pilot WAL generation rate](charts/pilot-wal-rate.svg)
 
+*Shows:* WAL written per second (repetition 1). *Purpose:* Write amplification over time; peaks are checkpoints (full-page writes) and, in B, the large MERGE of each cycle.
+
 ![pilot Switch wait per cycle (project B)](charts/pilot-switch-wait.svg)
+
+*Shows:* Time the consumer's switch (UPDATE of the controller rows) waited for in-flight inserts, per cycle (project B only, repetition 1). *Purpose:* Cost of the pessimistic lock: producers arriving during a switch wait about as long (risk of failed inserts with a short lock or statement timeout).
 
 ![pilot Producer throughput](charts/pilot-bar-producer-tps.svg)
 
+*Shows:* Mean committed inserts per second of the base producer over the whole load. *Purpose:* Was the offered rate delivered? Below the configured rate means saturation.
+
 ![pilot Producer latency p99](charts/pilot-bar-producer-p99-ms.svg)
+
+*Shows:* p99 latency of the base producer's inserts in the steady window (after warm-up), client queueing included. *Purpose:* Tail latency seen by producers: the number to compare with a client's timeout.
 
 ![pilot End-to-end lag p95](charts/pilot-bar-lag-p95-ms.svg)
 
+*Shows:* p95 age of the events when applied to orders (steady window, weighted by rows). *Purpose:* Freshness: the price of B's cycle against A's continuous workers.
+
 ![pilot WAL per event](charts/pilot-bar-wal-bytes-per-event.svg)
 
+*Shows:* WAL bytes per ingested event, from the load start to the end of the drain. *Purpose:* Write amplification: I/O, replication and archiving cost of each design.
+
 ![pilot CPU postgres](charts/pilot-bar-cpu-postgres-pct.svg)
+
+*Shows:* Mean CPU of the PostgreSQL container in the steady window (100 = one core). *Purpose:* Database cost of the same work; lower means more headroom for peaks.
+
+![pilot WAL per event by statement](charts/pilot-wal-steps.svg)
+
+*Shows:* WAL bytes per event split by statement (pg_stat_statements, mean of the repetitions): inbound INSERT, routing / switch (B), claim (A), MERGE into orders, cleanup (UPDATE / DELETE / TRUNCATE) and other = total WAL − those statements (vacuum, checkpoints, bookkeeping). *Purpose:* Where each design's write amplification comes from (docs/comparison.md).
 

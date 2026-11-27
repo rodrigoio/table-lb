@@ -42,7 +42,20 @@ without losing events and without leaving dead tuples behind.
 | `LOCK_SLOTS` | 64 | controller rows used by producers (`slot = client % LOCK_SLOTS`); 1 = everybody shares one row |
 | `PRODUCER_SCRIPT` | `/scripts/project/producer.sql` | `/scripts/project/producer-1rt.sql` = single-round-trip routing |
 | `POLL_MS` | 100 | how often the consumer checks the hot buffer when idle |
+| `MIN_CYCLE_MS` | 0 | minimum time the hot buffer stays open between two switches; 0 = switch as soon as it has a row |
 | `AUDIT` | 0 | 1 = record consumed events in `audit_consumed` (tests) |
+
+Cycle length: with `MIN_CYCLE_MS=0` the consumer switches as soon as the hot
+buffer has one row, so at moderate load it switches dozens of times per second
+(C2 on the development VM: 31 switches/s of ≈ 60 rows). Every switch pays the
+controller `UPDATE` of all `LOCK_SLOTS` rows, a stall of the producers caught
+by it and a `TRUNCATE`, for a few dozen rows. A minimum cycle (e.g. 30 s,
+labels `b-30s` / `b-1rt-30s`) spreads those costs over many more rows and makes
+a stale hot-buffer guess of `producer-1rt.sql` rare. The price is end-to-end
+lag (an event waits up to one cycle plus the drain) and larger drain
+transactions (one `MERGE` per cycle). The routing cost of the producer does
+not depend on it, and when a drain takes longer than the minimum (saturation)
+the next switch is immediate, as with 0.
 
 Lock striping matters on PostgreSQL: with a single shared row, new
 `FOR SHARE` lockers can overtake the waiting switch `UPDATE` and delay it for
