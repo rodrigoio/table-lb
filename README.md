@@ -14,6 +14,7 @@ Both apply events to the same business table (`orders`) with the same
 standard-SQL `MERGE` (forward-only order state machine
 `pending → payment_confirmed → sent → delivered`).
 
+What each campaign, scenario and label name means: [`results/README.md`](results/README.md).
 Variants, measured facts and which technique fits which scenario:
 [`docs/comparison.md`](docs/comparison.md). Insert failures and losses (zero
 tolerance) per design: [`docs/insert-failures.md`](docs/insert-failures.md).
@@ -206,7 +207,8 @@ project-a/    single inbox table: schema, pgbench producer, Rust consumer, compo
 project-b/    two buffers + controller: schema, pgbench producers, Rust consumer, compose
 tests/        correctness tests (switch race, single-round-trip race, negative control, A × B equivalence)
 bench/        scenarios, one-run runner (run.sh) and the campaign matrix (campaign.sh)
-results/      campaigns (summaries versioned, raw logs not)
+results/      campaigns (summaries versioned, raw logs not); results/README.md = what each campaign,
+              scenario and label name means
 docs/         article topics; comparison.md = variants (B 1RT / 4RT …), facts and when to use each
               insert-failures.md = every way an insert can fail or be lost, measured, per design
 ```

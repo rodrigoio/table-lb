@@ -4,6 +4,8 @@ Evidence: development VM (2 vCPU, 2 GB, CPU-bound), one repetition per run.
 Main source: `results/burst60-20261127` (scenario c6, `summary.md` and
 `bursts.md`); earlier facts from `results/smoke-20261127-0029` and
 `results/campaign-20261126`. Confirm on a proper host before generalising.
+What each campaign, scenario and label name means:
+[`results/README.md`](../results/README.md).
 
 **Requirement:** no insert may fail and no event may be lost, in either design.
 Failure modes, what was measured and the conditions each design needs are in
