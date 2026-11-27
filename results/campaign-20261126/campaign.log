@@ -1,0 +1,46 @@
+campaign campaign-20261126 started 2026-11-26T22:51:31Z at d24d03e
+[22:51:31] a/c1/a/rep-1: preparing (fresh database)
+[22:52:13] a/c1/a/rep-1: load started: duration=300s rate=max readers=0 burst=0
+[22:57:16] a/c1/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[22:57:50] a/c1/a/rep-1: backlog left: 0 (drain took 33s)
+[22:57:55] a/c1/a/rep-1: done → results/campaign-20261126/c1/a/rep-1
+[22:57:57] b/c1/b/rep-1: preparing (fresh database)
+[22:58:39] b/c1/b/rep-1: load started: duration=300s rate=max readers=0 burst=0
+[23:03:42] b/c1/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[23:03:45] b/c1/b/rep-1: backlog left: 0 (drain took 2s)
+[23:03:49] b/c1/b/rep-1: done → results/campaign-20261126/c1/b/rep-1
+[23:03:50] b/c1/b/rep-2: preparing (fresh database)
+[23:04:31] b/c1/b/rep-2: load started: duration=300s rate=max readers=0 burst=0
+[23:09:34] b/c1/b/rep-2: load finished, waiting for the consumer to drain the backlog
+[23:09:34] b/c1/b/rep-2: backlog left: 0 (drain took 0s)
+[23:09:38] b/c1/b/rep-2: done → results/campaign-20261126/c1/b/rep-2
+[23:09:40] a/c1/a/rep-2: preparing (fresh database)
+[23:10:20] a/c1/a/rep-2: load started: duration=300s rate=max readers=0 burst=0
+[23:15:23] a/c1/a/rep-2: load finished, waiting for the consumer to drain the backlog
+[23:16:01] a/c1/a/rep-2: backlog left: 0 (drain took 37s)
+[23:16:05] a/c1/a/rep-2: done → results/campaign-20261126/c1/a/rep-2
+[23:16:07] a/c1/a/rep-3: preparing (fresh database)
+[23:16:48] a/c1/a/rep-3: load started: duration=300s rate=max readers=0 burst=0
+[23:21:51] a/c1/a/rep-3: load finished, waiting for the consumer to drain the backlog
+[23:22:29] a/c1/a/rep-3: backlog left: 0 (drain took 37s)
+[23:22:33] a/c1/a/rep-3: done → results/campaign-20261126/c1/a/rep-3
+[23:22:35] b/c1/b/rep-3: preparing (fresh database)
+[23:23:16] b/c1/b/rep-3: load started: duration=300s rate=max readers=0 burst=0
+[23:28:19] b/c1/b/rep-3: load finished, waiting for the consumer to drain the backlog
+[23:28:23] b/c1/b/rep-3: backlog left: 0 (drain took 4s)
+[23:28:27] b/c1/b/rep-3: done → results/campaign-20261126/c1/b/rep-3
+[23:28:28] a/c2/a/rep-1: preparing (fresh database)
+[23:29:08] a/c2/a/rep-1: load started: duration=600s rate=2000 readers=1 burst=0
+[23:39:11] a/c2/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[23:39:11] a/c2/a/rep-1: backlog left: 0 (drain took 0s)
+[23:39:17] a/c2/a/rep-1: done → results/campaign-20261126/c2/a/rep-1
+[23:39:19] b/c2/b/rep-1: preparing (fresh database)
+[23:40:00] b/c2/b/rep-1: load started: duration=600s rate=2000 readers=1 burst=0
+[23:50:04] b/c2/b/rep-1: load finished, waiting for the consumer to drain the backlog
+[23:50:04] b/c2/b/rep-1: backlog left: 0 (drain took 0s)
+[23:50:08] b/c2/b/rep-1: done → results/campaign-20261126/c2/b/rep-1
+[23:50:10] a/c2/a-delete/rep-1: preparing (fresh database)
+[23:50:52] a/c2/a-delete/rep-1: load started: duration=600s rate=2000 readers=1 burst=0
+[00:00:55] a/c2/a-delete/rep-1: load finished, waiting for the consumer to drain the backlog
+[00:00:55] a/c2/a-delete/rep-1: backlog left: 0 (drain took 0s)
+[00:01:01] a/c2/a-delete/rep-1: done → results/campaign-20261126/c2/a-delete/rep-1

@@ -1,0 +1,22 @@
+campaign burst60-20261127 started 2026-11-27T13:09:25Z: c6 (periodic bursts, 20 min), labels a b-1rt-60s a-delete b-60s; C6_PRODUCER_RATE=1800 C6_BURST_RATE=3600
+[13:09:25] a/c6/a/rep-1: preparing (fresh database)
+[13:10:07] a/c6/a/rep-1: load started: duration=1200s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[13:30:10] a/c6/a/rep-1: load finished, waiting for the consumer to drain the backlog
+[13:30:10] a/c6/a/rep-1: backlog left: 0 (drain took 0s)
+[13:30:18] a/c6/a/rep-1: done → results/burst60-20261127/c6/a/rep-1
+[13:30:20] b/c6/b-1rt-60s/rep-1: preparing (fresh database)
+[13:31:03] b/c6/b-1rt-60s/rep-1: load started: duration=1200s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[13:51:07] b/c6/b-1rt-60s/rep-1: load finished, waiting for the consumer to drain the backlog
+[13:51:59] b/c6/b-1rt-60s/rep-1: backlog left: 0 (drain took 51s)
+[13:52:03] b/c6/b-1rt-60s/rep-1: done → results/burst60-20261127/c6/b-1rt-60s/rep-1
+[13:52:04] a/c6/a-delete/rep-1: preparing (fresh database)
+[13:52:47] a/c6/a-delete/rep-1: load started: duration=1200s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[14:12:51] a/c6/a-delete/rep-1: load finished, waiting for the consumer to drain the backlog
+[14:12:51] a/c6/a-delete/rep-1: backlog left: 0 (drain took 0s)
+[14:12:58] a/c6/a-delete/rep-1: done → results/burst60-20261127/c6/a-delete/rep-1
+[14:12:59] b/c6/b-60s/rep-1: preparing (fresh database)
+[14:13:41] b/c6/b-60s/rep-1: load started: duration=1200s clients=16 replicas=1 via=postgres rate=1800 readers=1 burst=1
+[14:33:44] b/c6/b-60s/rep-1: load finished, waiting for the consumer to drain the backlog
+[14:34:37] b/c6/b-60s/rep-1: backlog left: 0 (drain took 52s)
+[14:34:42] b/c6/b-60s/rep-1: done → results/burst60-20261127/c6/b-60s/rep-1
+campaign finished 2026-11-27T14:34:43Z
